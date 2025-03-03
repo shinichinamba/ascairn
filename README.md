@@ -62,7 +62,7 @@ aws s3 cp s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/
 \* In fact, if you have access to the AWS S3 BAM file which you want to analyse, and SAMtools is correctly installed, you do not need to download the BAM file and directly specify S3 path.
 
 
-2. Execute the `ascairn_type_allchr.sh` with the arguments (it will take 1~2 hours):
+2. Execute the `ascairn_type_allchr.sh` with the arguments (it will take ~30 minutes):
 
 ```
 bash ascairn_type_allchr.sh seq_data/NA12877.final.cram output/NA12877 ascairn_data 8
