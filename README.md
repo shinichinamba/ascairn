@@ -16,14 +16,25 @@ Centromere sequence analysis using rare k-mer markers
 - click
 - boto3 (required only for accessing CRAM files in Amazon S3)
   
-# Quick start
+# Install
 
 1. Install all the prerequisite software and install `ascairn`.
 ```
 pip install ascairn (--user)
 ```
 
-2. Perform centromere typing on a local BAM/CRAM file:
+2. Download the resource files for ascairn (in preparation).
+
+# Mini-tutorial
+
+1. Prepare the sequence data
+
+2. Calculate the sequence depth and determine the sex for the sample.
+
+3. Parse the rare-kmer counts of the target BAM file in the alpha satellite region.
+
+4. 
+5. Perform centromere typing on a local BAM/CRAM file:
 ```
 ascairn type /path/to/local/file.bam /path/to/output
 ```
