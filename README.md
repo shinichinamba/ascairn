@@ -31,11 +31,12 @@ git clone https://github.com/friend1ws/ascairn_data.git
 ```
 # Mini-tutorial
 
-Using the `ascairn_type_allchr.sh` script, you can execute a standard ascairn workflow: 
+Using the `ascairn_type_allchr.sh` script, you can execute a standard ascairn workflow.
 
+## Workflow 
 - `check_depth`　
- - Check the sequence coverage focusing on a reference region (long arm of chromosome 22)
- - Determine biological sex by assessing the coverage within a specified region of chromosome X (restricted here to the short arm) and take the ratio to the reference region. 
+  - Check the sequence coverage focusing on a reference region (long arm of chromosome 22)
+  - Determine biological sex by assessing the coverage within a specified region of chromosome X (restricted here to the short arm) and take the ratio to the reference region. 
 
 - `kmer_count` 
   - Extract reads aligned to alpha satellite regions and count the number of pre-defined rare k-mers.
@@ -43,6 +44,7 @@ Using the `ascairn_type_allchr.sh` script, you can execute a standard ascairn wo
 - `type`
   - Identify centromeric cluster pairs and the closest haplotype pairs for chromosomes 1–22 and X.
 
+## Step
 
 1. Prepare the sequence data
 
