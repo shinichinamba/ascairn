@@ -46,29 +46,41 @@ Using the `ascairn_type_allchr.sh` script, you can execute a standard ascairn wo
 
 ## Step
 
-1. Prepare the sequence data
+### 1. Prepare the sequence data
 
-```
-wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram seq_data
-wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram.crai seq_data
-```
+Download the sequence data using one of the following methods:
 
-Alternatively (which might be faster),
+**Option 1: AWS S3 (recommended for faster downloads)**
 ```
 aws s3 cp s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/ERR3989340/NA12877.final.cram seq_data/
 aws s3 cp s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/ERR3989340/NA12877.final.cram.crai seq_data/
 ```
 
-\* In fact, if you have access to the AWS S3 BAM file which you want to analyse, and SAMtools is correctly installed, you do not need to download the BAM file and directly specify S3 path.
+>  If you have direct access to AWS S3 BAM files and SAMtools is properly installed, you can skip downloading the file locally. Instead, directly specify the S3 path to your BAM or CRAM file in subsequent steps.
 
 
-2. Execute the `ascairn_type_allchr.sh` with the arguments (it will take 20~30 minutes):
+**Option 2: FTP**
+```
+wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram seq_data
+wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram.crai seq_data
+```
 
+
+### 2. Execute the `ascairn_type_allchr.sh` script
+Run the following command (runtime: approximately 20–30 minutes):
 ```
 bash ascairn_type_allchr.sh seq_data/NA12877.final.cram output/NA12877 ascairn_data 8
 ```
-Where the first argument is the path to BAM (CRAM) file, the second argument is the output directory path, 
-third argument is the path to the ascairn resource data, and the fourth argument is the number of threads.
 
-You will see the result `output/NA12877.cen_type.result.txt`
+**Argument Descriptions:**
+- First argument: Path to BAM or CRAM file.
+- Second argument: Path to the output prefix.
+- Third argument: Path to the ascairn resource data.
+- Fourth argument: Number of threads to use (optional, default: 8).
+
+**Result**
+After successful execution, you will find the output file at:
+```
+output/NA12877.cen_type.result.txt
+```
 
