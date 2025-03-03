@@ -16,16 +16,19 @@ Centromere sequence analysis using rare k-mer markers
 - click
 - boto3 (required only for accessing CRAM files in Amazon S3)
   
-# Install
+# Installation
 
-1. Install all the prerequisite software and install `ascairn`.
+1. Install all prerequisite software and ensure they are accessible by adding their locations to your `PATH`.
+
+2. Install `ascairn`.
 ```
 git clone https://github.com/friend1ws/ascairn.git
 cd ascairn
-pip install . (--user)
+pip install . [--user]
 ```
+> Note: The `--user` option is optional and can be used if you don't have administrative rights or if you prefer installing packages locally.
 
-2. Download the resource files for ascairn.
+3. Download ascairn resource files.
 ```
 git clone https://github.com/friend1ws/ascairn_resource.git
 ```
