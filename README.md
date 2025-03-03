@@ -27,7 +27,7 @@ pip install . (--user)
 
 2. Download the resource files for ascairn.
 ```
-git clone https://github.com/friend1ws/ascairn_data.git
+git clone https://github.com/friend1ws/ascairn_resource.git
 ```
 
 # Mini-Tutorial
@@ -71,7 +71,7 @@ wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram.crai 
 ### 2. Execute the `ascairn_type_allchr.sh` script
 Run the following command (runtime: approximately 20–30 minutes):
 ```
-bash ascairn_type_allchr.sh seq_data/NA12877.final.cram output/NA12877 ascairn_data 8
+bash ascairn_type_allchr.sh seq_data/NA12877.final.cram output/NA12877 ascairn_resource/ver_2024-12-06 8
 ```
 
 **Argument Descriptions:**
