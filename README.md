@@ -29,26 +29,28 @@ pip install . (--user)
 ```
 git clone https://github.com/friend1ws/ascairn_data.git
 ```
-# Mini-tutorial
 
-Using the `ascairn_type_allchr.sh` script, you can execute a standard ascairn workflow.
+# Mini-Tutorial
+
+This mini-tutorial demonstrates how to execute a standard workflow using the `ascairn_type_allchr.sh` script. 
+This tutorial can be easily extended to any sequence data aligned to the GRCh38 reference genome.
 
 ## Workflow 
 - `check_depth`　
-  - Check the sequence coverage focusing on a reference region (long arm of chromosome 22)
-  - Determine biological sex by assessing the coverage within a specified region of chromosome X (restricted here to the short arm) and take the ratio to the reference region. 
+  - Checks sequence coverage focusing on a reference region (long arm of chromosome 22)
+  - Determines biological sex by assessing the coverage within a specified region of chromosome X (restricted here to the short arm), relative to the reference region.
 
 - `kmer_count` 
-  - Extract reads aligned to alpha satellite regions and count the number of pre-defined rare k-mers.
+  - Extracts reads aligned to alpha satellite regions and counts occurrences of predefined rare k-mers.
 
 - `type`
-  - Identify centromeric cluster pairs and the closest haplotype pairs for chromosomes 1–22 and X.
+  - Identifies centromeric cluster pairs and the closest haplotype pairs for chromosomes 1–22 and chromosome X.
 
-## Step
+## Procedure
 
 ### 1. Prepare the sequence data
 
-Download the sequence data using one of the following methods:
+Download a sequence data (aligned to the GRCh38 reference genome) using one of the following methods:
 
 **Option 1: AWS S3 (recommended for faster downloads)**
 ```
@@ -56,13 +58,13 @@ aws s3 cp s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/
 aws s3 cp s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/ERR3989340/NA12877.final.cram.crai seq_data/
 ```
 
->  If you have direct access to AWS S3 BAM files and SAMtools is properly installed, you can skip downloading the file locally. Instead, directly specify the S3 path to your BAM or CRAM file in subsequent steps.
+> If you have direct access to AWS S3 BAM or CRAM files and SAMtools is properly installed, you can skip downloading the files locally. Instead, directly specify the S3 path in subsequent steps.
 
 
 **Option 2: FTP**
 ```
-wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram seq_data
-wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram.crai seq_data
+wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram -P seq_data/
+wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram.crai -P seq_data/
 ```
 
 
@@ -73,10 +75,10 @@ bash ascairn_type_allchr.sh seq_data/NA12877.final.cram output/NA12877 ascairn_d
 ```
 
 **Argument Descriptions:**
-- First argument: Path to BAM or CRAM file.
-- Second argument: Path to the output prefix.
-- Third argument: Path to the ascairn resource data.
-- Fourth argument: Number of threads to use (optional, default: 8).
+- **First argument**: Path to BAM or CRAM file.
+- **Second argument**: Output path prefix.
+- **Third argument**: Path to the ascairn resource data.
+- **Fourth argument**: Number of threads to use (optional, default: 8).
 
 **Result**
 After successful execution, you will find the output file at:
