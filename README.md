@@ -20,11 +20,15 @@ Centromere sequence analysis using rare k-mer markers
 
 1. Install all the prerequisite software and install `ascairn`.
 ```
-pip install ascairn (--user)
+git clone https://github.com/friend1ws/ascairn.git
+cd ascairn
+pip install . (--user)
 ```
 
-2. Download the resource files for ascairn (in preparation).
-
+2. Download the resource files for ascairn.
+```
+git clone https://github.com/friend1ws/ascairn_data.git
+```
 # Mini-tutorial
 
 Using the `ascairn_type_allchr.sh` script, you can execute a standard ascairn workflow: 
