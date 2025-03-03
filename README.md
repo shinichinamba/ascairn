@@ -27,30 +27,39 @@ pip install ascairn (--user)
 
 # Mini-tutorial
 
+Using the `ascairn_type_allchr.sh` script, you can execute a standard ascairn workflow: 
+
+- `check_depth`　
+ - Check the sequence coverage focusing on a reference region (long arm of chromosome 22)
+ - Determine biological sex by assessing the coverage within a specified region of chromosome X (restricted here to the short arm) and take the ratio to the reference region. 
+
+- `kmer_count` 
+  - Extract reads aligned to alpha satellite regions and count the number of pre-defined rare k-mers.
+
+- `type`
+  - Identify centromeric cluster pairs and the closest haplotype pairs for chromosomes 1–22 and X.
+
+
 1. Prepare the sequence data
 
 ```
 wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram seq_data
+wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram.crai seq_data
 ```
 
 Alternatively (which might be faster),
 ```
 aws s3 cp s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/ERR3989340/NA12877.final.cram seq_data/
+aws s3 cp s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/ERR3989340/NA12877.final.cram.crai seq_data/
 ```
 
-* In fact, if you have access to the AWS S3 BAM file which you want to analyse, and SAMtools is correctly installed, you do not need to download the BAM file and directly specify S3 path.
+\* In fact, if you have access to the AWS S3 BAM file which you want to analyse, and SAMtools is correctly installed, you do not need to download the BAM file and directly specify S3 path.
 
 
-2. Calculate the sequence depth and determine the sex for the sample.
+2. Execute the `ascairn_type_allchr.sh` with the arguments (it will take 1~2 hours):
 
-3. Parse the rare-kmer counts of the target BAM file in the alpha satellite region.
-
-4. 
-5. Perform centromere typing on a local BAM/CRAM file:
 ```
-ascairn type /path/to/local/file.bam /path/to/output
+bash ascairn_type_allchr.sh seq_data/NA12877.final.cram output/NA12877 ascairn_data 8
 ```
-Example command using a CRAM file located in Amazon S3 (it will take 1~2 hours):
-```
-ascairn type s3://1000genomes/1000G_2504_high_coverage/data/ERR3240114/HG00096.final.cram output/HG00096 --threads 8
-```
+Where the first argument is the path to BAM (CRAM) file, the second argument is the output directory path, 
+third argument is the path to the ascairn resource data, and the fourth argument is the number of threads.
