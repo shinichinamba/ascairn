@@ -5,8 +5,9 @@
 
 # ascairn
 It has become clear that centromere sequences, especially alpha satellite sequences, exhibit considerable variation.
-We have demonstrated that centromeres can be classified using rarely observed k-mers (k-length subsequences).
+We have demonstrated that centromeres can be classified using rarely observed k-mers (Sugawa et al., in preparation).
 `ascairn` (alpha-satellite cairn) is software designed to perform various analyses, including estimating centromere variation from short-read data by utilizing rare k-mers within centromere sequences
+
 
 # Dependency
 ## Software
