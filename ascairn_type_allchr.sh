@@ -22,7 +22,6 @@ then
 fi
 
 
-if false; then
 
 ##########
 ascairn check_depth \
@@ -39,7 +38,7 @@ ascairn kmer_count \
     "${DATA_DIR}/cen_region_curated_margin_hg38.bed" \
     "${OUTPUT_PREFIX}.kmer_count.txt" \
     --threads "${THREAD_NUM}"
-fi
+
 
 DEPTH="$(grep Coverage ${OUTPUT_PREFIX}.depth.txt | cut -d ' ' -f 2)"
 SEX="$(grep Sex ${OUTPUT_PREFIX}.depth.txt | cut -d ' ' -f 2)"
