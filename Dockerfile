@@ -41,7 +41,7 @@ RUN wget https://github.com/brentp/mosdepth/releases/download/v0.3.9/mosdepth &&
 RUN python3 -m pip install --upgrade setuptools
 # RUN python3 -m pip install boto3
 
-RUN git clone https://github.com/friend1ws/ascairn.git && \
+RUN git clone https://github.com/shinichinamba/ascairn.git && \
 	cd ascairn && \
 	python3 -m pip install . 
 
