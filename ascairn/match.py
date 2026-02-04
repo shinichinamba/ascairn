@@ -6,30 +6,24 @@ import polars as pl
 import numpy as np
 
 
-def calc_loglikelihood(PR1, PR2, D_count, marker_list):
+def calc_loglikelihood(PR1, PR2, D_count, marker_list, max_copy_number=2):
+    # mprob_k = sum of prob_i * prob_j where i + j = k
+    mprob_exprs = []
+    for k in range(2 * max_copy_number + 1):
+        terms = [pl.col(f"prob_{i}") * pl.col(f"prob_{k-i}_PR2")
+                 for i in range(max_copy_number + 1) if 0 <= k - i <= max_copy_number]
+        mprob_exprs.append(sum(terms).alias(f"mprob_{k}"))
 
     PR12 = PR1.filter(pl.col("Marker").is_in(marker_list)) \
-        .join(PR2, on="Marker", suffix = "_PR2") \
-        .with_columns([
-            (pl.col("prob_0") * pl.col("prob_0_PR2")).alias("mprob_0"),
-            (pl.col("prob_1") * pl.col("prob_0_PR2") + pl.col("prob_0") * pl.col("prob_1_PR2")).alias("mprob_1"),
-            (pl.col("prob_2") * pl.col("prob_0_PR2") + pl.col("prob_0") * pl.col("prob_2_PR2") + pl.col("prob_1") * pl.col("prob_1_PR2")).alias("mprob_2"),
-            (pl.col("prob_2") * pl.col("prob_1_PR2") + pl.col("prob_1") * pl.col("prob_2_PR2")).alias("mprob_3"),
-            (pl.col("prob_2") * pl.col("prob_2_PR2")).alias("mprob_4")
-        ])
+        .join(PR2, on="Marker", suffix="_PR2") \
+        .with_columns(mprob_exprs)
 
-    PR12_count = (
-        PR12.join(D_count, on="Marker") \
-        .with_columns([
-            (pl.col("mprob_0") * pl.col("dprob_0") +
-             pl.col("mprob_1") * pl.col("dprob_1") +
-             pl.col("mprob_2") * pl.col("dprob_2") +
-             pl.col("mprob_3") * pl.col("dprob_3") +
-             pl.col("mprob_4") * pl.col("dprob_4")).alias("tprob_01234")
-        ])
-    )
+    tprob_expr = sum([pl.col(f"mprob_{k}") * pl.col(f"dprob_{k}")
+                      for k in range(2 * max_copy_number + 1)]).alias("tprob")
 
-    tL = PR12_count["tprob_01234"].log().sum()
+    PR12_count = PR12.join(D_count, on="Marker").with_columns([tprob_expr])
+
+    tL = PR12_count["tprob"].log().sum()
 
     return(tL)
 
@@ -57,47 +51,29 @@ def calc_loglikelihood_single(PR1, D_count, marker_list):
     return(tL)
 
 
-def calc_posterior_prob(PR1, PR2, D_count):
+def calc_posterior_prob(PR1, PR2, D_count, max_copy_number=2):
+    # Generate (N+1)² mprob states: mprob_ij = prob_i * prob_j
+    mprob_exprs = [(pl.col(f"prob_{i}") * pl.col(f"prob_{j}_PR2")).alias(f"mprob_{i}{j}")
+                   for i in range(max_copy_number + 1) for j in range(max_copy_number + 1)]
 
-    PR12 = PR1.join(PR2, on="Marker", suffix = "_PR2") \
-        .with_columns([
-            (pl.col("prob_0") * pl.col("prob_0_PR2")).alias("mprob_00"),
-            (pl.col("prob_0") * pl.col("prob_1_PR2")).alias("mprob_01"),
-            (pl.col("prob_1") * pl.col("prob_0_PR2")).alias("mprob_10"),
-            (pl.col("prob_1") * pl.col("prob_1_PR2")).alias("mprob_11"),
-            (pl.col("prob_0") * pl.col("prob_2_PR2")).alias("mprob_02"),
-            (pl.col("prob_2") * pl.col("prob_0_PR2")).alias("mprob_20"),
-            (pl.col("prob_1") * pl.col("prob_2_PR2")).alias("mprob_12"),
-            (pl.col("prob_2") * pl.col("prob_1_PR2")).alias("mprob_21"),
-            (pl.col("prob_2") * pl.col("prob_2_PR2")).alias("mprob_22")
-        ])
+    PR12 = PR1.join(PR2, on="Marker", suffix="_PR2").with_columns(mprob_exprs)
+
+    # tprob_ij = mprob_ij * dprob_{i+j}
+    tprob_exprs = [(pl.col(f"mprob_{i}{j}") * pl.col(f"dprob_{i+j}")).alias(f"tprob_{i}{j}")
+                   for i in range(max_copy_number + 1) for j in range(max_copy_number + 1)]
+
+    # Sum all tprob values
+    tprob_sum_expr = sum([pl.col(f"tprob_{i}{j}") for i in range(max_copy_number + 1)
+                          for j in range(max_copy_number + 1)]).alias("tprob_sum")
+
+    # Normalize to get posterior probabilities
+    prob_exprs = [(pl.col(f"tprob_{i}{j}") / pl.col("tprob_sum")).alias(f"Prob_{i}{j}")
+                  for i in range(max_copy_number + 1) for j in range(max_copy_number + 1)]
 
     PR12_count = PR12.join(D_count, on="Marker") \
-        .with_columns([
-            (pl.col("mprob_00") * pl.col("dprob_0")).alias("tprob_00"),
-            (pl.col("mprob_01") * pl.col("dprob_1")).alias("tprob_01"), 
-            (pl.col("mprob_10") * pl.col("dprob_1")).alias("tprob_10"), 
-            (pl.col("mprob_11") * pl.col("dprob_2")).alias("tprob_11"), 
-            (pl.col("mprob_20") * pl.col("dprob_2")).alias("tprob_20"), 
-            (pl.col("mprob_02") * pl.col("dprob_2")).alias("tprob_02"), 
-            (pl.col("mprob_12") * pl.col("dprob_3")).alias("tprob_12"),
-            (pl.col("mprob_21") * pl.col("dprob_3")).alias("tprob_21"),
-            (pl.col("mprob_22") * pl.col("dprob_4")).alias("tprob_22")
-        ]) \
-        .with_columns([
-            (pl.col("tprob_00") + pl.col("tprob_01") + pl.col("tprob_10") + pl.col("tprob_11") + \
-                pl.col("tprob_20") + pl.col("tprob_02") + pl.col("tprob_12") + pl.col("tprob_21") + pl.col("tprob_22")).alias("tprob_sum")]) \
-        .with_columns([
-            (pl.col("tprob_00") / pl.col("tprob_sum")).alias("Prob_00"),
-            (pl.col("tprob_01") / pl.col("tprob_sum")).alias("Prob_01"),
-            (pl.col("tprob_10") / pl.col("tprob_sum")).alias("Prob_10"),
-            (pl.col("tprob_11") / pl.col("tprob_sum")).alias("Prob_11"),
-            (pl.col("tprob_02") / pl.col("tprob_sum")).alias("Prob_02"),
-            (pl.col("tprob_20") / pl.col("tprob_sum")).alias("Prob_20"),
-            (pl.col("tprob_12") / pl.col("tprob_sum")).alias("Prob_12"),
-            (pl.col("tprob_21") / pl.col("tprob_sum")).alias("Prob_21"),
-            (pl.col("tprob_22") / pl.col("tprob_sum")).alias("Prob_22")
-        ]) 
+        .with_columns(tprob_exprs) \
+        .with_columns([tprob_sum_expr]) \
+        .with_columns(prob_exprs)
 
     return(PR12_count)
 
@@ -223,31 +199,31 @@ def estimage_cosine_dist_single(probability_matrix, hap1_vec, num_samples = 1000
 
 
 def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, cluster_kmer_count_file, depth,
-    cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0 = 0.8, nbinom_mu_unit = 0.4):
+    cluster_haplotype_file, max_copy_number=None, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0 = 0.8, nbinom_mu_unit = 0.4):
+
+    cluster_marker_count_df = pl.read_csv(cluster_kmer_count_file, infer_schema_length = None, separator = '\t')
+
+    # Auto-detect max_copy_number from Count_* columns if not specified
+    if max_copy_number is None:
+        count_cols = [col for col in cluster_marker_count_df.columns if col.startswith("Count_")]
+        max_copy_number = len(count_cols) - 1
 
     max_depth_thres = math.ceil(depth * 3)
     # max_depth_thres = 100
-   
-    prob_0 = [nbinom.pmf(x, nbinom_size_0, nbinom_size_0 / (nbinom_size_0 + nbinom_mu_0)) for x in range(max_depth_thres + 1)]
-    prob_1 = [nbinom.pmf(x, nbinom_size, nbinom_size / (nbinom_size + 1.0 * nbinom_mu_unit * depth)) for x in range(max_depth_thres + 1)]
-    prob_2 = [nbinom.pmf(x, nbinom_size, nbinom_size / (nbinom_size + 2.0 * nbinom_mu_unit * depth)) for x in range(max_depth_thres + 1)]
-    prob_3 = [nbinom.pmf(x, nbinom_size, nbinom_size / (nbinom_size + 3.0 * nbinom_mu_unit * depth)) for x in range(max_depth_thres + 1)]
-    prob_4 = [nbinom.pmf(x, nbinom_size, nbinom_size / (nbinom_size + 4.0 * nbinom_mu_unit * depth)) for x in range(max_depth_thres + 1)]
 
+    # prob_0: background distribution
+    prob_list = [[nbinom.pmf(x, nbinom_size_0, nbinom_size_0 / (nbinom_size_0 + nbinom_mu_0)) for x in range(max_depth_thres + 1)]]
+    # prob_1 through prob_{2*max_copy_number}: signal distributions
+    for i in range(1, 2 * max_copy_number + 1):
+        prob_list.append([nbinom.pmf(x, nbinom_size, nbinom_size / (nbinom_size + i * nbinom_mu_unit * depth)) for x in range(max_depth_thres + 1)])
 
     count = pl.read_csv(kmer_count_file, separator = '\t', new_columns = ["Marker", "Count"]) \
             .filter(pl.col("Count") <= max_depth_thres)
 
-    D_count = pl.DataFrame({
-        "Marker": count["Marker"],
-        "dprob_0": [prob_0[c] for c in count["Count"]],
-        "dprob_1": [prob_1[c] for c in count["Count"]],
-        "dprob_2": [prob_2[c] for c in count["Count"]],
-        "dprob_3": [prob_3[c] for c in count["Count"]],
-        "dprob_4": [prob_4[c] for c in count["Count"]]
-    })
-
-    cluster_marker_count_df = pl.read_csv(cluster_kmer_count_file, infer_schema_length = None, separator = '\t')
+    D_count_dict = {"Marker": count["Marker"]}
+    for i, prob in enumerate(prob_list):
+        D_count_dict[f"dprob_{i}"] = [prob[c] for c in count["Count"]]
+    D_count = pl.DataFrame(D_count_dict)
 
 
     marker_list =  pl.Series(cluster_marker_count_df \
@@ -260,14 +236,11 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, clus
 
     cluster_num = cluster_marker_count_df["Cluster"].max()
 
-    cluster_marker_count_df_2 = cluster_marker_count_df.with_columns([
-        ((pl.col("Count_0") + pseudo_count) / 
-         (pl.col("Count_0") + pl.col("Count_1") + pl.col("Count_2") + 3 * pseudo_count)).alias("prob_0"),
-        ((pl.col("Count_1") + pseudo_count) / 
-         (pl.col("Count_0") + pl.col("Count_1") + pl.col("Count_2") + 3 * pseudo_count)).alias("prob_1"),
-        ((pl.col("Count_2") + pseudo_count) / 
-         (pl.col("Count_0") + pl.col("Count_1") + pl.col("Count_2") + 3 * pseudo_count)).alias("prob_2")
-    ])
+    count_cols = [pl.col(f"Count_{i}") for i in range(max_copy_number + 1)]
+    total = sum(count_cols) + (max_copy_number + 1) * pseudo_count
+    prob_exprs = [((pl.col(f"Count_{i}") + pseudo_count) / total).alias(f"prob_{i}")
+                  for i in range(max_copy_number + 1)]
+    cluster_marker_count_df_2 = cluster_marker_count_df.with_columns(prob_exprs)
 
     # cluster_marker_count_df_2.write_csv("cluster_marker_count_df_2.tsv", separator = '\t')
 
@@ -305,9 +278,10 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, clus
     # PR1_max.write_csv("PR1_max.tsv", separator = '\t')
     # PR2_max.write_csv("PR2_max.tsv", separator = '\t')
 
-    PR12_count = calc_posterior_prob(PR1_max, PR2_max, D_count) \
-                    .select(["Marker", "Marker_num", "Hap_minus_marker_num", "Rel_pos_mean", "Rel_pos_std",
-                    "Prob_00", "Prob_01", "Prob_10", "Prob_11", "Prob_02", "Prob_20", "Prob_12", "Prob_21", "Prob_22"])
+    prob_cols = [f"Prob_{i}{j}" for i in range(max_copy_number + 1)
+                 for j in range(max_copy_number + 1)]
+    PR12_count = calc_posterior_prob(PR1_max, PR2_max, D_count, max_copy_number) \
+                    .select(["Marker", "Marker_num", "Hap_minus_marker_num", "Rel_pos_mean", "Rel_pos_std"] + prob_cols)
 
 
     PR12_count.write_csv(output_prefix + ".cluster.marker_prob.txt", separator = '\t')
@@ -329,45 +303,35 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, clus
         unique_markers.join(unique_haplotypes, how="cross")
     )
 
+    # Count_0 through Count_N: exact match
+    count_exprs = [(pl.col("Count") == i).cast(pl.Int64).alias(f"Count_{i}")
+                   for i in range(max_copy_number + 1)]
+
+    hap_count_cols = [pl.col(f"Count_{i}") for i in range(max_copy_number + 1)]
+    hap_total = sum(hap_count_cols)
+    hap_prob_exprs = [(pl.col(f"Count_{i}") / hap_total).alias(f"prob_{i}")
+                      for i in range(max_copy_number + 1)]
+
     hap_marker_count_df_2 = (
         all_combinations.join(hap_marker_count_df_2_tmp, on=["Marker", "Haplotype"], how="left")
         .select(["Marker", "Haplotype", pl.col("Count").fill_null(0)])
-        .with_columns([
-        # Creating binary columns based on `Count` values
-            (pl.col("Count") == 0).cast(pl.Int64).alias("Count_0"),
-            (pl.col("Count") == 1).cast(pl.Int64).alias("Count_1"),
-            (pl.col("Count") == 2).cast(pl.Int64).alias("Count_2"),
-        ])
+        .with_columns(count_exprs)
         .drop("Count")
-        .with_columns([
-            (pl.col("Count_0") / (pl.col("Count_0") + pl.col("Count_1") + pl.col("Count_2"))).alias("prob_0"),
-            (pl.col("Count_1") / (pl.col("Count_0") + pl.col("Count_1") + pl.col("Count_2"))).alias("prob_1"),
-            (pl.col("Count_2") / (pl.col("Count_0") + pl.col("Count_1") + pl.col("Count_2"))).alias("prob_2"),
-        ])
-
+        .with_columns(hap_prob_exprs)
     )
 
 
     target_cluster_1 = D_LL[0, "Cluster1"]
     target_cluster_2 = D_LL[0, "Cluster2"]
 
+    prob_c_cols = ["Marker"] + [pl.col(f"prob_{i}").alias(f"prob_{i}_c") for i in range(max_copy_number + 1)]
     PR1_c = cluster_marker_count_df_2 \
         .filter(pl.col("Cluster") == target_cluster_1) \
-        .select([
-            "Marker",
-            pl.col("prob_0").alias("prob_0_c"),
-            pl.col("prob_1").alias("prob_1_c"),
-            pl.col("prob_2").alias("prob_2_c")
-        ])
+        .select(prob_c_cols)
 
     PR2_c = cluster_marker_count_df_2 \
         .filter(pl.col("Cluster") == target_cluster_2) \
-        .select([
-            "Marker",
-            pl.col("prob_0").alias("prob_0_c"),
-            pl.col("prob_1").alias("prob_1_c"),
-            pl.col("prob_2").alias("prob_2_c")
-        ])  
+        .select(prob_c_cols)  
 
     # marker_list.to_frame().write_csv("marker_list.tsv", separator = '\t')
     # PR2_c.write_csv("PR1_c.tsv", separator = '\t')
@@ -404,53 +368,27 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, clus
 
                 PR1 = hap_marker_count_df_2 \
                     .filter(pl.col("Haplotype") == target_cluster_hap_1[i]) \
-                    .select([
-                        "Marker",
-                        pl.col("prob_0").alias("prob_0_h"),
-                        pl.col("prob_1").alias("prob_1_h"),
-                        pl.col("prob_2").alias("prob_2_h")
-                    ]) \
+                    .select(["Marker"] + [pl.col(f"prob_{k}").alias(f"prob_{k}_h") for k in range(max_copy_number + 1)]) \
                     .join(PR1_c, on="Marker", how="inner") \
-                    .with_columns([
-                        ((1 - cluster_ratio) * pl.col("prob_0_h") + cluster_ratio * pl.col("prob_0_c")).alias("prob_0"),
-                        ((1 - cluster_ratio) * pl.col("prob_1_h") + cluster_ratio * pl.col("prob_1_c")).alias("prob_1"),
-                        ((1 - cluster_ratio) * pl.col("prob_2_h") + cluster_ratio * pl.col("prob_2_c")).alias("prob_2")
-                    ])
+                    .with_columns([((1 - cluster_ratio) * pl.col(f"prob_{k}_h") + cluster_ratio * pl.col(f"prob_{k}_c")).alias(f"prob_{k}")
+                                   for k in range(max_copy_number + 1)])
 
             else:
                 PR1 = PR1_c \
-                    .select([
-                        "Marker",
-                        pl.col("prob_0_c").alias("prob_0"),
-                        pl.col("prob_1_c").alias("prob_1"),
-                        pl.col("prob_2_c").alias("prob_2")
-                    ])
+                    .select(["Marker"] + [pl.col(f"prob_{k}_c").alias(f"prob_{k}") for k in range(max_copy_number + 1)])
 
             if target_cluster_hap_2[j] not in [None, "NA", "None", "NONE"]:
 
                 PR2 = hap_marker_count_df_2 \
                     .filter(pl.col("Haplotype") == target_cluster_hap_2[j]) \
-                    .select([
-                        "Marker",
-                        pl.col("prob_0").alias("prob_0_h"),
-                        pl.col("prob_1").alias("prob_1_h"),
-                        pl.col("prob_2").alias("prob_2_h")
-                    ]) \
+                    .select(["Marker"] + [pl.col(f"prob_{k}").alias(f"prob_{k}_h") for k in range(max_copy_number + 1)]) \
                     .join(PR2_c, on="Marker", how="inner") \
-                    .with_columns([
-                        ((1 - cluster_ratio) * pl.col("prob_0_h") + cluster_ratio * pl.col("prob_0_c")).alias("prob_0"),
-                        ((1 - cluster_ratio) * pl.col("prob_1_h") + cluster_ratio * pl.col("prob_1_c")).alias("prob_1"),
-                        ((1 - cluster_ratio) * pl.col("prob_2_h") + cluster_ratio * pl.col("prob_2_c")).alias("prob_2")
-                    ])
+                    .with_columns([((1 - cluster_ratio) * pl.col(f"prob_{k}_h") + cluster_ratio * pl.col(f"prob_{k}_c")).alias(f"prob_{k}")
+                                   for k in range(max_copy_number + 1)])
 
             else:
                 PR2 = PR2_c \
-                    .select([
-                        "Marker",
-                        pl.col("prob_0_c").alias("prob_0"),
-                        pl.col("prob_1_c").alias("prob_1"),
-                        pl.col("prob_2_c").alias("prob_2")
-                    ])
+                    .select(["Marker"] + [pl.col(f"prob_{k}_c").alias(f"prob_{k}") for k in range(max_copy_number + 1)])
 
      
             tL = calc_loglikelihood(PR1, PR2, D_count, marker_list)
@@ -490,19 +428,20 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, clus
 
 
 
-    PR12_count = calc_posterior_prob(PR1_max, PR2_max, D_count) \
+    prob_cols = [f"Prob_{i}{j}" for i in range(max_copy_number + 1)
+                 for j in range(max_copy_number + 1)]
+    PR12_count = calc_posterior_prob(PR1_max, PR2_max, D_count, max_copy_number) \
         .join(hap_info1, on = "Marker", how = "left") \
         .join(hap_info2, on = "Marker", how = "left") \
-        .select(["Marker", pl.col("Haplotype1").fill_null("NA"), pl.col("Mean_marker_pos1").fill_null("NA"), pl.col("Marker_count1").fill_null("NA"), 
-                 pl.col("Haplotype2").fill_null("NA"), pl.col("Mean_marker_pos2").fill_null("NA"), pl.col("Marker_count2").fill_null("NA"),
-                 "Prob_00", "Prob_01", "Prob_10", "Prob_11", "Prob_02", "Prob_20", "Prob_12", "Prob_21", "Prob_22"])
+        .select(["Marker", pl.col("Haplotype1").fill_null("NA"), pl.col("Mean_marker_pos1").fill_null("NA"), pl.col("Marker_count1").fill_null("NA"),
+                 pl.col("Haplotype2").fill_null("NA"), pl.col("Mean_marker_pos2").fill_null("NA"), pl.col("Marker_count2").fill_null("NA")] + prob_cols)
 
     # PR1_max.join(PR2_max, on="Marker", suffix = "_PR2").write_csv("PR12_max.tsv", separator = '\t')
     # PR1_max.write_csv("PR1_max_hap.tsv", separator = '\t')
     # PR2_max.write_csv("PR2_max_hap.tsv", separator = '\t')
     PR12_count.write_csv(output_prefix + ".haplotype.marker_prob.txt", separator = '\t')
 
-    prob_mat = PR12_count.select(["Prob_00", "Prob_01", "Prob_10", "Prob_11", "Prob_02", "Prob_20", "Prob_12", "Prob_21", "Prob_22"]) # .to_numpy()
+    prob_mat = PR12_count.select(prob_cols)
 
     # Create hap1_vec and hap2_vec examples
     hap1_vec = PR12_count.select(["Marker_count1"]).to_numpy().flatten()

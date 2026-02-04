@@ -3,16 +3,19 @@ import os
 import subprocess
 import pytest
 
+# Limit Polars threads to avoid memory issues during tests
+os.environ["POLARS_MAX_THREADS"] = "1"
+
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 @pytest.fixture(scope="session")
 def resource_dir():
-    """Clone ascairn_resource if not exists and return path."""
+    """Clone ascairn_resource (devel branch) if not exists and return path."""
     resource_path = os.path.join(TESTS_DIR, "ascairn_resource")
     if not os.path.exists(resource_path):
         subprocess.run(
-            ["git", "clone", "https://github.com/friend1ws/ascairn_resource.git"],
+            ["git", "clone", "-b", "devel", "https://github.com/friend1ws/ascairn_resource.git"],
             cwd=TESTS_DIR,
             check=True,
         )
