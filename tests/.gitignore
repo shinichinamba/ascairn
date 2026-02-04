@@ -1,0 +1,4 @@
+output/
+ascairn_resource/
+__pycache__/
+.pytest_cache/

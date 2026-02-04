@@ -1,0 +1,24 @@
+# Test for ascairn kmer_count command
+import os
+import subprocess
+import filecmp
+
+
+def test_kmer_count(s3_cram, resource_dir, output_dir, expected_dir):
+    output_file = os.path.join(output_dir, "NA12877.kmer_count.txt")
+    expected_file = os.path.join(expected_dir, "NA12877.kmer_count.txt")
+
+    subprocess.run(
+        [
+            "ascairn", "kmer_count",
+            s3_cram,
+            os.path.join(resource_dir, "rare_kmer_list.fa"),
+            os.path.join(resource_dir, "cen_region_curated_margin_hg38.bed"),
+            output_file,
+            "--threads", "4",
+        ],
+        check=True,
+    )
+
+    assert os.path.exists(output_file)
+    assert filecmp.cmp(output_file, expected_file, shallow=False)
