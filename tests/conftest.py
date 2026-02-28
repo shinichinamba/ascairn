@@ -8,6 +8,14 @@ os.environ["POLARS_MAX_THREADS"] = "1"
 
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# Resource version: set via ASCAIRN_RESOURCE_VERSION env var (default: ver_2024-12-06)
+RESOURCE_VERSION = os.environ.get("ASCAIRN_RESOURCE_VERSION", "ver_2024-12-06")
+
+
+@pytest.fixture(scope="session")
+def resource_version():
+    return RESOURCE_VERSION
+
 
 @pytest.fixture(scope="session")
 def resource_dir():
@@ -19,7 +27,7 @@ def resource_dir():
             cwd=TESTS_DIR,
             check=True,
         )
-    return os.path.join(resource_path, "resource", "ver_2024-12-06")
+    return os.path.join(resource_path, "resource", RESOURCE_VERSION)
 
 
 @pytest.fixture(scope="session")
@@ -31,7 +39,7 @@ def output_dir():
 
 @pytest.fixture
 def expected_dir():
-    return os.path.join(TESTS_DIR, "expected")
+    return os.path.join(TESTS_DIR, "expected", RESOURCE_VERSION)
 
 
 @pytest.fixture
