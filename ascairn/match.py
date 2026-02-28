@@ -199,7 +199,7 @@ def estimage_cosine_dist_single(probability_matrix, hap1_vec, num_samples = 1000
 
 
 def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, cluster_kmer_count_file, depth,
-    cluster_haplotype_file, max_copy_number=None, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0 = 0.8, nbinom_mu_unit = 0.4):
+    cluster_haplotype_file, max_copy_number=None, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4):
 
     cluster_marker_count_df = pl.read_csv(cluster_kmer_count_file, infer_schema_length = None, separator = '\t')
 
@@ -212,10 +212,13 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, clus
     # max_depth_thres = 100
 
     # prob_0: background distribution
-    prob_list = [[nbinom.pmf(x, nbinom_size_0, nbinom_size_0 / (nbinom_size_0 + nbinom_mu_0)) for x in range(max_depth_thres + 1)]]
+    nbinom_mu_0 = nbinom_mu_0_unit * depth
+    nbinom_p_0 = nbinom_size_0 / (nbinom_size_0 + nbinom_mu_0)
+    prob_list = [[nbinom.pmf(x, nbinom_size_0, nbinom_p_0) for x in range(max_depth_thres + 1)]]
     # prob_1 through prob_{2*max_copy_number}: signal distributions
     for i in range(1, 2 * max_copy_number + 1):
-        prob_list.append([nbinom.pmf(x, nbinom_size, nbinom_size / (nbinom_size + i * nbinom_mu_unit * depth)) for x in range(max_depth_thres + 1)])
+        nbinom_p = nbinom_size / (nbinom_size + i * nbinom_mu_unit * depth)
+        prob_list.append([nbinom.pmf(x, nbinom_size, nbinom_p) for x in range(max_depth_thres + 1)])
 
     count = pl.read_csv(kmer_count_file, separator = '\t', new_columns = ["Marker", "Count"]) \
             .filter(pl.col("Count") <= max_depth_thres)
@@ -460,14 +463,18 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, clus
 
 
 def match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_file, cluster_kmer_count_file, depth,
-    cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0 = 0.8, nbinom_mu_unit = 0.4):
+    cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4):
 
-    max_depth_thres = math.ceil(depth * 1.5) 
+    max_depth_thres = math.ceil(depth * 1.5)
     # max_depth_thres = 200
 
-    prob_0 = [nbinom.pmf(x, nbinom_size_0, nbinom_size_0 / (nbinom_size_0 + nbinom_mu_0)) for x in range(max_depth_thres + 1)]
-    prob_1 = [nbinom.pmf(x, nbinom_size, nbinom_size / (nbinom_size + 1.0 * nbinom_mu_unit * depth)) for x in range(max_depth_thres + 1)]
-    prob_2 = [nbinom.pmf(x, nbinom_size, nbinom_size / (nbinom_size + 2.0 * nbinom_mu_unit * depth)) for x in range(max_depth_thres + 1)]
+    nbinom_mu_0 = nbinom_mu_0_unit * depth
+    nbinom_p_0 = nbinom_size_0 / (nbinom_size_0 + nbinom_mu_0)
+    prob_0 = [nbinom.pmf(x, nbinom_size_0, nbinom_p_0) for x in range(max_depth_thres + 1)]
+    nbinom_p_1 = nbinom_size / (nbinom_size + 1.0 * nbinom_mu_unit * depth)
+    prob_1 = [nbinom.pmf(x, nbinom_size, nbinom_p_1) for x in range(max_depth_thres + 1)]
+    nbinom_p_2 = nbinom_size / (nbinom_size + 2.0 * nbinom_mu_unit * depth)
+    prob_2 = [nbinom.pmf(x, nbinom_size, nbinom_p_2) for x in range(max_depth_thres + 1)]
 
 
     count = pl.read_csv(kmer_count_file, separator = '\t', new_columns = ["Marker", "Count"]) \
@@ -692,7 +699,7 @@ if __name__ == "__main__":
     cluster_haplotype_file = "../ascairn/data/cluster/chr1.hap_cluster.txt"
 
     match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, cluster_kmer_count_file, depth,
-        cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0 = 0.8, nbinom_mu_unit = 0.4)
+        cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4)
 
 
     kmer_count_file = "../out/out.kmer_count.txt"
@@ -703,7 +710,7 @@ if __name__ == "__main__":
     cluster_haplotype_file = "../ascairn/data/cluster/chrX.hap_cluster.txt"
  
     match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_file, cluster_kmer_count_file, depth,
-        cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0 = 0.8, nbinom_mu_unit = 0.4)
+        cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4)
 
 
 

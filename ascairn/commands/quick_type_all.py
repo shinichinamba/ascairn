@@ -92,12 +92,12 @@ def quick_type_all_command(bam_file, output_prefix, reference, sex, threads, bas
             logger.info("Matching haplotypes of chr%s" % cen_id)
             match_cluster_haplotype_single(output_prefix + ".kmer_count.txt", output_prefix + ".match/chr" + cen_id,
                 kmer_info_file, cluster_kmer_count_file, depth,
-                cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0 = 0.8, nbinom_mu_unit = 0.4)
+                cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4)
         else:
 
             logger.info("Matching haplotypes of chr%s" % cen_id)
             match_cluster_haplotype(output_prefix + ".kmer_count.txt", output_prefix + ".match/chr" + cen_id, 
                 kmer_info_file, cluster_kmer_count_file, depth,
-                cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0 = 0.8, nbinom_mu_unit = 0.4)
+                cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4)
 
         
