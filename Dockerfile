@@ -1,5 +1,5 @@
 FROM ubuntu:22.04
-MAINTAINER Yuichi Shiraishi <friend1ws@gmail.com> 
+LABEL maintainer="Yuichi Shiraishi <friend1ws@gmail.com>" 
 
 ENV TZ=Asia/Tokyo
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
