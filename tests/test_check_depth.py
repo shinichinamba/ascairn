@@ -1,7 +1,15 @@
 # Test for ascairn check_depth command
 import os
 import subprocess
-import filecmp
+
+
+def compare_depth_values(output_file, expected_file):
+    """Compare depth files ignoring file path lines (which vary by environment)."""
+    path_prefixes = ("Baseline region file:", "ChrX region file:")
+    with open(output_file) as f1, open(expected_file) as f2:
+        out_lines = [l.rstrip("\n") for l in f1 if not l.startswith(path_prefixes)]
+        exp_lines = [l.rstrip("\n") for l in f2 if not l.startswith(path_prefixes)]
+    return out_lines == exp_lines
 
 
 def test_check_depth(s3_cram, resource_dir, output_dir, expected_dir):
@@ -21,4 +29,4 @@ def test_check_depth(s3_cram, resource_dir, output_dir, expected_dir):
     )
 
     assert os.path.exists(output_file)
-    assert filecmp.cmp(output_file, expected_file, shallow=False)
+    assert compare_depth_values(output_file, expected_file)
