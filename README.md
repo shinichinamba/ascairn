@@ -5,6 +5,9 @@
 
 # ascairn
 
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+![CI](https://github.com/friend1ws/ascairn/actions/workflows/python-test.yml/badge.svg)
+
 `ascairn` (alpha-satellite cairn) is software for estimating centromere variation from short-read sequencing data using rare k-mers within centromere sequences.
 For each chromosome, ascairn identifies the most likely pair of centromere clusters and the nearest haplotypes from a reference panel ([Shiraishi et al., bioRxiv, 2025](https://doi.org/10.1101/2025.07.26.666712)).
 
