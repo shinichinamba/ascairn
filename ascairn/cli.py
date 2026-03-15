@@ -1,10 +1,12 @@
 import click
+from importlib.metadata import version
 from ascairn.commands import parse_marker
 from ascairn.commands import kmer_count
 from ascairn.commands import cen_type
 from ascairn.commands import check_depth
 
 @click.group()
+@click.version_option(version=version("ascairn"))
 def main():
     """ASCairn: Alpha Satellite Centromere Analysis."""
     pass

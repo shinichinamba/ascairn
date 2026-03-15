@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ascairn"
+version = "0.1.0b6"
+description = "Analyze centromere variation from short-read data using rare k-mers in alpha satellite sequences"
+readme = "README.md"
+license = "GPL-3.0-only"
+requires-python = ">=3.9"
+authors = [
+    { name = "Yuichi Shiraishi", email = "friend1ws@gmail.com" },
+]
+keywords = ["centromere", "alpha-satellite", "k-mer", "bioinformatics", "genomics"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+urls.Homepage = "https://github.com/friend1ws/ascairn"
+urls.Repository = "https://github.com/friend1ws/ascairn"
+
+dependencies = [
+    "click",
+    "scipy",
+    "polars",
+    "numpy",
+]
+
+[project.optional-dependencies]
+s3 = ["boto3"]
+
+[project.scripts]
+ascairn = "ascairn.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["ascairn*"]
