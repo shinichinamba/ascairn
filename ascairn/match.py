@@ -687,30 +687,4 @@ def match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_fil
     ##########
 
 
-if __name__ == "__main__":
-
-    # print("test")
-
-    kmer_count_file = "../out/out.kmer_count.txt"
-    output_prefix = "output_pl/out.match/chr1"
-    kmer_info_file = "../ascairn/data/kmer_info/chr1.kmer_info.txt.gz"
-    cluster_kmer_count_file = "../ascairn/data/cluster/chr1.cluster_marker_count.txt.gz"
-    depth = 41.68
-    cluster_haplotype_file = "../ascairn/data/cluster/chr1.hap_cluster.txt"
-
-    match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, cluster_kmer_count_file, depth,
-        cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4)
-
-
-    kmer_count_file = "../out/out.kmer_count.txt"
-    output_prefix = "output_pl/out.match/chrX"
-    kmer_info_file = "../ascairn/data/kmer_info/chrX.kmer_info.txt.gz"
-    cluster_kmer_count_file = "../ascairn/data/cluster/chrX.cluster_marker_count.txt.gz"
-    depth = 41.68 
-    cluster_haplotype_file = "../ascairn/data/cluster/chrX.hap_cluster.txt"
- 
-    match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_file, cluster_kmer_count_file, depth,
-        cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4)
-
-
 

@@ -1,9 +1,6 @@
 import click
 import os
-import importlib.resources
-from ascairn.utils import *
-from ascairn.match import *
-# from ascairn.utils import bam_processing, dummy_scripts
+from ascairn.match import match_cluster_haplotype, match_cluster_haplotype_single
 
 from ascairn.logger import get_logger
 logger = get_logger(__name__)

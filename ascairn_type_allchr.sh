@@ -12,8 +12,6 @@ if [ $# -lt 4 ] || [ $# -gt 5 ]; then
     echo "  REFERENCE       Reference genome build (must be 'hg38' or 'chm13')"
     echo "  THREAD_NUM      Number of threads (optional, default=8)"
     exit 1
-
-    exit 1
 fi
 
 BAM_FILE="$1"
@@ -58,7 +56,7 @@ ascairn kmer_count \
 DEPTH="$(grep Coverage ${OUTPUT_PREFIX}.depth.txt | cut -d ' ' -f 2)"
 SEX="$(grep Sex ${OUTPUT_PREFIX}.depth.txt | cut -d ' ' -f 2)"
 
-echo -e "Chr\tCluster_1\tCluster_2\tHaplotype_1\tHaplotpe_2" > ${OUTPUT_PREFIX}.cen_type.result.txt
+echo -e "Chr\tCluster_1\tCluster_2\tHaplotype_1\tHaplotype_2" > ${OUTPUT_PREFIX}.cen_type.result.txt
 
 for CHR_IND in `seq 1 22` X
 do
