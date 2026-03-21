@@ -31,13 +31,13 @@ def cen_type_command(kmer_count_file, output_prefix, kmer_info_file, cluster_kme
     logger.info("Matching haplotypes")
     if is_single_hap == True:
 
-        match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_file, cluster_kmer_count_file, depth,
-            cluster_haplotype_file, cluster_ratio=cluster_ratio, pseudo_count=pseudo_count, nbinom_size_0=nbinom_size_0,
+        match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_file, cluster_haplotype_file, depth,
+            cluster_ratio=cluster_ratio, pseudo_count=pseudo_count, nbinom_size_0=nbinom_size_0,
             nbinom_size=nbinom_size, nbinom_mu_0_unit=nbinom_mu_0_unit, nbinom_mu_unit=nbinom_mu_unit)
     else:
 
-        match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, cluster_kmer_count_file, depth,
-            cluster_haplotype_file, cluster_ratio=cluster_ratio, pseudo_count=pseudo_count,
+        match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, cluster_haplotype_file, depth,
+            cluster_ratio=cluster_ratio, pseudo_count=pseudo_count,
             nbinom_size_0=nbinom_size_0, nbinom_size=nbinom_size, nbinom_mu_0_unit=nbinom_mu_0_unit, nbinom_mu_unit=nbinom_mu_unit)
 
     logger.info("Completed.")

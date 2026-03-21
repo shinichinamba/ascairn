@@ -27,7 +27,7 @@ def resource_dir():
             cwd=TESTS_DIR,
             check=True,
         )
-    return os.path.join(resource_path, "resource", RESOURCE_VERSION)
+    return os.path.join(resource_path, "resource", "legacy", RESOURCE_VERSION)
 
 
 @pytest.fixture(scope="session")
