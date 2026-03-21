@@ -55,7 +55,7 @@ ascairn kmer_count \
 
 SEX="$(grep Sex ${OUTPUT_PREFIX}.depth.txt | cut -d ' ' -f 2)"
 
-echo -e "Chr\tCluster_1\tCluster_2\tHaplotype_1\tHaplotype_2" > ${OUTPUT_PREFIX}.cen_type.result.txt
+FIRST_CHR=1
 
 for CHR_IND in `seq 1 22` X
 do
@@ -76,18 +76,15 @@ do
 
     ${commands[@]}
 
-    cl1="$(head -n2 ${OUTPUT_PREFIX}.chr${CHR_IND}.cluster.hap_pair.txt | tail -n1 | cut -f 1)"
-    hap1="$(head -n2 ${OUTPUT_PREFIX}.chr${CHR_IND}.haplotype.hap_pair.txt | tail -n1 | cut -f 1)"
-    if [ $CHR_IND = "X" -a $SEX = "male" ]
+    # Aggregate per-chromosome result.txt into a single file
+    if [ $FIRST_CHR -eq 1 ]
     then
-        cl2="NA"
-        hap2="NA"
-    else
-        cl2="$(head -n2 ${OUTPUT_PREFIX}.chr${CHR_IND}.cluster.hap_pair.txt | tail -n1 | cut -f 2)"
-        hap2="$(head -n2 ${OUTPUT_PREFIX}.chr${CHR_IND}.haplotype.hap_pair.txt | tail -n1 | cut -f 2)"
+        echo -ne "Chr\t" > ${OUTPUT_PREFIX}.cen_type.result.txt
+        head -n1 ${OUTPUT_PREFIX}.chr${CHR_IND}.result.txt >> ${OUTPUT_PREFIX}.cen_type.result.txt
+        FIRST_CHR=0
     fi
-
-    echo -e "chr${CHR_IND}\t${cl1}\t${cl2}\t${hap1}\t${hap2}" >> ${OUTPUT_PREFIX}.cen_type.result.txt
+    echo -ne "chr${CHR_IND}\t" >> ${OUTPUT_PREFIX}.cen_type.result.txt
+    tail -n1 ${OUTPUT_PREFIX}.chr${CHR_IND}.result.txt >> ${OUTPUT_PREFIX}.cen_type.result.txt
 
 done
 

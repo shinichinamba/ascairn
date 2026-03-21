@@ -503,11 +503,29 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
     ##########
     # this is experimental
     # cdist1, cdist2 = estimage_cosine_dist(prob_mat, hap1_vec, hap2_vec)
-    # 
+    #
     # with open(output_prefix + ".haplotype.cosine_dist.txt", 'w') as hout:
     #     print("Cosine_dist1\tCosine_dist2", file = hout)
     #     print(f'{cdist1}\t{cdist2}', file = hout)
     ##########
+
+    # Write result.txt with hap_info annotations auto-expanded
+    best_hap1 = D_LL2[0, "Haplotype1"]
+    best_hap2 = D_LL2[0, "Haplotype2"]
+    best_cl1 = D_LL[0, "Cluster1"]
+    best_cl2 = D_LL[0, "Cluster2"]
+
+    extra_cols = [c for c in hap_info_df.columns if c not in ("Haplotype", "Cluster")]
+    row1 = hap_info_df.filter(pl.col("Haplotype") == best_hap1)
+    row2 = hap_info_df.filter(pl.col("Haplotype") == best_hap2)
+
+    result_data = {"Cluster_1": [best_cl1], "Cluster_2": [best_cl2],
+                   "Haplotype_1": [best_hap1], "Haplotype_2": [best_hap2]}
+    for col in extra_cols:
+        result_data[f"{col}_1"] = [row1[0, col] if row1.height > 0 else "NA"]
+        result_data[f"{col}_2"] = [row2[0, col] if row2.height > 0 else "NA"]
+
+    pl.DataFrame(result_data).write_csv(output_prefix + ".result.txt", separator='\t')
 
 
 def match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_file, hap_info_file, depth,
@@ -702,11 +720,23 @@ def match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_fil
     ##########
     # this is experimental
     # cdist1 = estimage_cosine_dist_single(prob_mat, hap1_vec)
-    # 
+    #
     # with open(output_prefix + ".haplotype.cosine_dist.txt", 'w') as hout:
     #     print("Cosine_dist", file = hout)
     #     print(f'{cdist1}', file = hout)
     ##########
 
+    # Write result.txt with hap_info annotations auto-expanded
+    best_hap1 = D_LL2[0, "Haplotype1"]
+    best_cl1 = D_LL[0, "Cluster1"]
 
+    extra_cols = [c for c in hap_info_df.columns if c not in ("Haplotype", "Cluster")]
+    row1 = hap_info_df.filter(pl.col("Haplotype") == best_hap1)
 
+    result_data = {"Cluster_1": [best_cl1], "Cluster_2": ["NA"],
+                   "Haplotype_1": [best_hap1], "Haplotype_2": ["NA"]}
+    for col in extra_cols:
+        result_data[f"{col}_1"] = [row1[0, col] if row1.height > 0 else "NA"]
+        result_data[f"{col}_2"] = ["NA"]
+
+    pl.DataFrame(result_data).write_csv(output_prefix + ".result.txt", separator='\t')
