@@ -11,6 +11,8 @@
 `ascairn` (alpha-satellite cairn) is software for estimating centromere variation from short-read sequencing data using rare k-mers within centromere sequences.
 For each chromosome, ascairn identifies the most likely pair of centromere clusters and the nearest haplotypes from a reference panel ([Shiraishi et al., bioRxiv, 2025](https://doi.org/10.1101/2025.07.26.666712)).
 
+Both GRCh38 (hg38) and T2T-CHM13 (chm13) reference genomes are supported. Centromere region BED files for each reference are included in the resource repository.
+
 <div align="center">
   <img src="image/categorization_overview.png" alt="Overview of centromere classification using rare k-mer" width="750">
 </div>
@@ -77,9 +79,6 @@ ascairn_resource/
 
 ## Quick Start
 
-The simplest way to run ascairn is through the wrapper script `ascairn_type_allchr.sh`,
-which executes all three steps (`check_depth`, `kmer_count`, `cen_type`) sequentially for chr1-22 and chrX.
-
 ### 1. Prepare the sequence data
 
 Download sequence data (aligned to the GRCh38 reference genome) using one of the following methods:
@@ -100,22 +99,21 @@ wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram.crai 
 
 ### 2. Run the workflow
 
+The simplest way to run ascairn is via `type_all`, which executes all steps (`check_depth`, `kmer_count`, `cen_type`) for chr1-22 and chrX in a single command:
+
+```bash
+ascairn type_all \
+    seq_data/NA12877.final.cram \
+    -o output/NA12877 \
+    --resource_dir ascairn_resource/resource/panel/ascairn_paper_2025 \
+    --reference hg38 \
+    -t 8
+```
+
+Alternatively, you can use the shell wrapper script `ascairn_type_allchr.sh`:
 ```bash
 bash ascairn_type_allchr.sh seq_data/NA12877.final.cram output/NA12877 ascairn_resource/resource/panel/ascairn_paper_2025 hg38 8
 ```
-
-**Usage:**
-```
-ascairn_type_allchr.sh <BAM_FILE> <OUTPUT_PREFIX> <DATA_DIR> <REFERENCE: hg38|chm13> [THREAD_NUM]
-```
-
-| Argument         | Description                                              | Default |
-|------------------|----------------------------------------------------------|---------|
-| First argument   | Path to BAM or CRAM file                                 | -       |
-| Second argument  | Output path prefix                                       | -       |
-| Third argument   | Path to ascairn resource panel directory                  | -       |
-| Fourth argument  | Reference genome for BAM file (`hg38` or `chm13`)       | -       |
-| Fifth argument   | Number of threads to use                                 | 8       |
 
 ### 3. Check the results
 
@@ -128,8 +126,31 @@ See [Output Format](#output-format) for how to interpret the results.
 
 ## Commands
 
+### `type_all`
+
+Runs the full workflow (`check_depth` → `kmer_count` → `cen_type` for all chromosomes) in a single command. Automatically determines biological sex and applies single-haplotype mode for chrX in males.
+
+```bash
+ascairn type_all \
+    seq_data/NA12877.final.cram \
+    -o output/NA12877 \
+    --resource_dir ascairn_resource/resource/panel/ascairn_paper_2025 \
+    --reference hg38 \
+    -t 8
+```
+
+| Option | Description | Required |
+|--------|-------------|----------|
+| `BAM_FILE` | Path to BAM or CRAM file (positional argument) | Yes |
+| `-o` | Output path prefix | Yes |
+| `--resource_dir` | Path to panel resource directory | Yes |
+| `--reference` | Reference genome build (`hg38` or `chm13`) | Yes |
+| `-t` | Number of threads | No (default: 8) |
+
+### Individual commands
+
 The workflow consists of three commands that are normally run in order.
-You can also run them individually for more control.
+You can run them individually for more control.
 
 ### `check_depth`
 
@@ -147,9 +168,9 @@ ascairn check_depth \
 **Output** (`output/NA12877.depth.txt`):
 ```
 Coverage: 37.24
-Baseline region file: ascairn_resource/resource/ver_2024-12-06/chr22_long_arm_hg38.bed
+Baseline region file: ascairn_resource/resource/common/chr22_long_arm_hg38.bed
 Sex: male
-ChrX region file: ascairn_resource/resource/ver_2024-12-06/chrX_short_arm_hg38.bed
+ChrX region file: ascairn_resource/resource/common/chrX_short_arm_hg38.bed
 ChrX coverage: 18.0
 ```
 
@@ -181,12 +202,13 @@ ascairn cen_type \
     --depth_file output/NA12877.depth.txt
 ```
 
-For male samples on chrX, add the `--single_hap` option (the wrapper script handles this automatically based on `check_depth` output).
+For male samples on chrX, add the `--single_hap` option (`type_all` handles this automatically based on `check_depth` output).
 
 **Output files** (using `output/NA12877.chr22` as the output prefix):
 
 | File | Description |
 |------|-------------|
+| `*.result.txt` | Best cluster pair, haplotype pair, and hap_info annotations (e.g., Contig_len) |
 | `*.cluster.hap_pair.txt` | Ranked cluster pairs with log-likelihoods. The first data row is the best pair. |
 | `*.haplotype.hap_pair.txt` | Ranked haplotype pairs with log-likelihoods. The first data row is the best pair. |
 | `*.cluster.marker_prob.txt` | Per-marker copy number probabilities used for cluster assignment |
@@ -196,7 +218,7 @@ For male samples on chrX, add the `--single_hap` option (the wrapper script hand
 
 ### `cen_type.result.txt`
 
-The main result file (generated by the wrapper script) is a TSV with one row per chromosome:
+The main result file (generated by `type_all` or `ascairn_type_allchr.sh`) is a TSV with one row per chromosome:
 
 | Column | Description |
 |--------|-------------|
@@ -205,8 +227,13 @@ The main result file (generated by the wrapper script) is a TSV with one row per
 | Cluster_2 | Best-matching cluster ID for the second allele |
 | Haplotype_1 | Nearest haplotype ID for the first allele (e.g., `HG00268.mat`) |
 | Haplotype_2 | Nearest haplotype ID for the second allele |
+| *additional columns* | Any extra columns from `hap_info.txt` are automatically appended with `_1`/`_2` suffixes (e.g., `Contig_len_1`, `Contig_len_2`) |
 
-For male chrX, Cluster_2 and Haplotype_2 are `NA`.
+For male chrX, `_2` columns are `NA`.
+
+### Per-chromosome `result.txt`
+
+Each `cen_type` run produces a `*.result.txt` file with the same columns as above (without the `Chr` column). The `cen_type.result.txt` file is the concatenation of these per-chromosome files.
 
 ### Cluster and haplotype pair files
 
@@ -217,6 +244,12 @@ These files list all candidate pairs ranked by log-likelihood (higher = better f
 | Cluster1 / Haplotype1 | First member of the pair |
 | Cluster2 / Haplotype2 | Second member of the pair |
 | Loglikelihood | Log-likelihood of the pair given the observed k-mer counts |
+
+## Notes
+
+- **CHM13 support**: ascairn supports both GRCh38 (hg38) and T2T-CHM13 (chm13) aligned BAM/CRAM files. Specify the reference genome via `--reference hg38` or `--reference chm13`. The centromere region BED files for each reference are provided in `resource/common/`.
+- **chrY**: chrY is currently excluded from the analysis. The centromeric region of chrY is largely composed of satellite III sequences rather than alpha satellite, making the rare k-mer approach less applicable.
+- **Test data**: The Quick Start example uses NA12877 from the 1000 Genomes Project high-coverage dataset. This sample was chosen because it is publicly accessible via both AWS S3 and FTP, enabling reproducible testing without restricted data access.
 
 ## Citation
 
