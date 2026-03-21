@@ -260,7 +260,8 @@ def build_cluster_marker_count(kmer_info_file, hap_info_file):
 
 
 def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_info_file, depth,
-    cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4):
+    cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4,
+    hap_candidates_file = None):
 
     cluster_marker_count_df, max_copy_number = build_cluster_marker_count(kmer_info_file, hap_info_file)
 
@@ -390,6 +391,12 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
 
     hap_info_df = pl.read_csv(hap_info_file, separator = '\t')
 
+    # Load haplotype candidate list if provided
+    hap_candidates = None
+    if hap_candidates_file is not None:
+        with open(hap_candidates_file) as f:
+            hap_candidates = set(line.strip() for line in f if line.strip())
+
     target_cluster_hap_1 = hap_info_df \
         .filter(pl.col("Cluster") == target_cluster_1) \
         .select("Haplotype") \
@@ -402,6 +409,9 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
         .to_series() \
         .to_list()
 
+    if hap_candidates is not None:
+        target_cluster_hap_1 = [h for h in target_cluster_hap_1 if h in hap_candidates]
+        target_cluster_hap_2 = [h for h in target_cluster_hap_2 if h in hap_candidates]
 
     cl1_list = []
     cl2_list = []
@@ -529,7 +539,8 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
 
 
 def match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_file, hap_info_file, depth,
-    cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4):
+    cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4,
+    hap_candidates_file = None):
 
     cluster_marker_count_df, max_copy_number = build_cluster_marker_count(kmer_info_file, hap_info_file)
 
@@ -641,11 +652,20 @@ def match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_fil
 
     hap_info_df = pl.read_csv(hap_info_file, separator = '\t')
 
+    # Load haplotype candidate list if provided
+    hap_candidates = None
+    if hap_candidates_file is not None:
+        with open(hap_candidates_file) as f:
+            hap_candidates = set(line.strip() for line in f if line.strip())
+
     target_cluster_hap_1 = hap_info_df \
         .filter(pl.col("Cluster") == target_cluster_1) \
         .select("Haplotype") \
         .to_series() \
         .to_list()
+
+    if hap_candidates is not None:
+        target_cluster_hap_1 = [h for h in target_cluster_hap_1 if h in hap_candidates]
 
     cl1_list = []
     LL_list = []
