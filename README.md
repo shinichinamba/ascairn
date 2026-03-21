@@ -58,8 +58,8 @@ ascairn/
 ascairn_resource/
 └── resource/
     ├── common/
-    │   ├── cen_region_hg38.bed
-    │   ├── cen_region_chm13.bed
+    │   ├── cen_region_curated_margin_hg38.bed
+    │   ├── cen_region_curated_margin_chm13.bed
     │   ├── chr22_long_arm_hg38.bed
     │   ├── chr22_long_arm_chm13.bed
     │   ├── chrX_short_arm_hg38.bed
