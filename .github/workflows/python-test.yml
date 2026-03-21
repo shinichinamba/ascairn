@@ -21,7 +21,7 @@ jobs:
         pip install .
     - name: Clone ascairn_resource
       run: |
-        git clone -b devel https://github.com/friend1ws/ascairn_resource.git tests/ascairn_resource
+        git clone https://github.com/friend1ws/ascairn_resource.git tests/ascairn_resource
     - name: Run tests
       run: |
         pytest tests/test_cen_type.py -v
