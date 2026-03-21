@@ -185,7 +185,7 @@ def calc_rel_pos(kmer_info_file):
     """Calculate Rel_pos_mean and Rel_pos_std per Marker from kmer_info."""
     kmer_info_df = pl.read_csv(kmer_info_file, infer_schema_length=None, separator='\t')
     rel_pos_df = kmer_info_df.with_columns(
-        ((pl.col("Marker_pos") - 100000) / pl.col("Contig_len")).alias("Rel_pos")
+        (pl.col("Marker_pos") / pl.col("Contig_len")).alias("Rel_pos")
     ).group_by("Marker").agg([
         pl.col("Rel_pos").mean().alias("Rel_pos_mean"),
         pl.col("Rel_pos").std().alias("Rel_pos_std"),
