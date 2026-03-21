@@ -7,11 +7,11 @@ logger = get_logger(__name__)
 
 @click.command()
 @click.argument("bam_file", type=click.Path(exists=False))
-@click.argument("baseline_region_file", type=click.Path(exists=True))
-@click.argument("output_file", type=click.Path())
-@click.option("--x_region_file", type=click.Path(exists=True), default = None)
-@click.option("--threads", default=4, help="Number of threads to use.")
-def check_depth_command(bam_file, baseline_region_file, output_file, x_region_file, threads):
+@click.option("-o", "--output_file", required=True, type=click.Path())
+@click.option("--baseline_region", "baseline_region_file", required=True, type=click.Path(exists=True))
+@click.option("--x_region", "x_region_file", type=click.Path(exists=True), default=None)
+@click.option("-t", "--threads", default=4, help="Number of threads to use.")
+def check_depth_command(bam_file, output_file, baseline_region_file, x_region_file, threads):
 
     # check if the executables exist
     is_tool("samtools")

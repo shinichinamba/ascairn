@@ -44,7 +44,7 @@ This repository contains the reference data required by ascairn, including:
    - Rare k-mer list for alpha satellite sequences (`rare_kmer_list.fa`)
    - Centromere region BED files for hg38 and chm13
    - Per-chromosome k-mer information (`kmer_info/`)
-   - Cluster marker counts derived from the aHOR-hap panel (`cluster_m3/`)
+   - Per-chromosome haplotype-to-cluster mapping (`hap_info/`)
 
 ```bash
 git clone https://github.com/friend1ws/ascairn_resource.git
@@ -55,20 +55,24 @@ After installation, your directory structure should look like this:
 ascairn/
 ascairn_resource/
 └── resource/
-    └── ver_2024-12-06/
-        ├── rare_kmer_list.fa
-        ├── cen_region_curated_margin_hg38.bed
-        ├── chr22_long_arm_hg38.bed
-        ├── chrX_short_arm_hg38.bed
-        ├── kmer_info/
-        │   ├── chr1.kmer_info.txt.gz
-        │   ├── ...
-        │   └── chrX.kmer_info.txt.gz
-        └── cluster_m3/
-            ├── chr1.cluster_marker_count.txt.gz
-            ├── chr1.hap_cluster.txt
-            ├── ...
-            └── chrX.hap_cluster.txt
+    ├── common/
+    │   ├── cen_region_hg38.bed
+    │   ├── cen_region_chm13.bed
+    │   ├── chr22_long_arm_hg38.bed
+    │   ├── chr22_long_arm_chm13.bed
+    │   ├── chrX_short_arm_hg38.bed
+    │   └── chrX_short_arm_chm13.bed
+    └── panel/
+        └── ascairn_paper_2025/
+            ├── rare_kmer_list.fa
+            ├── kmer_info/
+            │   ├── chr1.kmer_info.txt.gz
+            │   ├── ...
+            │   └── chrX.kmer_info.txt.gz
+            └── hap_info/
+                ├── chr1.hap_info.txt
+                ├── ...
+                └── chrX.hap_info.txt
 ```
 
 ## Quick Start
@@ -97,7 +101,7 @@ wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram.crai 
 ### 2. Run the workflow
 
 ```bash
-bash ascairn_type_allchr.sh seq_data/NA12877.final.cram output/NA12877 ascairn_resource/resource/ver_2024-12-06 hg38 8
+bash ascairn_type_allchr.sh seq_data/NA12877.final.cram output/NA12877 ascairn_resource/resource/panel/ascairn_paper_2025 hg38 8
 ```
 
 **Usage:**
@@ -109,7 +113,7 @@ ascairn_type_allchr.sh <BAM_FILE> <OUTPUT_PREFIX> <DATA_DIR> <REFERENCE: hg38|ch
 |------------------|----------------------------------------------------------|---------|
 | First argument   | Path to BAM or CRAM file                                 | -       |
 | Second argument  | Output path prefix                                       | -       |
-| Third argument   | Path to ascairn resource directory                       | -       |
+| Third argument   | Path to ascairn resource panel directory                  | -       |
 | Fourth argument  | Reference genome for BAM file (`hg38` or `chm13`)       | -       |
 | Fifth argument   | Number of threads to use                                 | 8       |
 
@@ -134,10 +138,10 @@ Checks sequence coverage in a reference region (chr22 long arm) and determines b
 ```bash
 ascairn check_depth \
     seq_data/NA12877.final.cram \
-    ascairn_resource/resource/ver_2024-12-06/chr22_long_arm_hg38.bed \
-    output/NA12877.depth.txt \
-    --x_region_file ascairn_resource/resource/ver_2024-12-06/chrX_short_arm_hg38.bed \
-    --threads 8
+    -o output/NA12877.depth.txt \
+    --baseline_region ascairn_resource/resource/common/chr22_long_arm_hg38.bed \
+    --x_region ascairn_resource/resource/common/chrX_short_arm_hg38.bed \
+    -t 8
 ```
 
 **Output** (`output/NA12877.depth.txt`):
@@ -156,31 +160,28 @@ Extracts reads aligned to alpha satellite regions and counts occurrences of pred
 ```bash
 ascairn kmer_count \
     seq_data/NA12877.final.cram \
-    ascairn_resource/resource/ver_2024-12-06/rare_kmer_list.fa \
-    ascairn_resource/resource/ver_2024-12-06/cen_region_curated_margin_hg38.bed \
-    output/NA12877.kmer_count.txt \
-    --threads 8
+    -o output/NA12877.kmer_count.txt \
+    --kmer_file ascairn_resource/resource/panel/ascairn_paper_2025/rare_kmer_list.fa \
+    --cen_region ascairn_resource/resource/common/cen_region_hg38.bed \
+    -t 8
 ```
 
 **Output** (`output/NA12877.kmer_count.txt`): a two-column TSV with k-mer sequences and their counts.
 
 ### `cen_type`
 
-Identifies the most likely centromere cluster pair and nearest haplotype pair for a given chromosome. Requires the coverage value from `check_depth` output.
+Identifies the most likely centromere cluster pair and nearest haplotype pair for a given chromosome. Requires the depth file from `check_depth` output.
 
 ```bash
-COV=37.24   # "Coverage" value from check_depth output
-
 ascairn cen_type \
     output/NA12877.kmer_count.txt \
-    output/NA12877.chr22 \
-    ascairn_resource/resource/ver_2024-12-06/kmer_info/chr22.kmer_info.txt.gz \
-    ascairn_resource/resource/ver_2024-12-06/cluster_m3/chr22.cluster_marker_count.txt.gz \
-    ${COV} \
-    --cluster_haplotype_file ascairn_resource/resource/ver_2024-12-06/cluster_m3/chr22.hap_cluster.txt
+    -o output/NA12877.chr22 \
+    --kmer_info ascairn_resource/resource/panel/ascairn_paper_2025/kmer_info/chr22.kmer_info.txt.gz \
+    --hap_info ascairn_resource/resource/panel/ascairn_paper_2025/hap_info/chr22.hap_info.txt \
+    --depth_file output/NA12877.depth.txt
 ```
 
-For male samples on chrX, add the `--is_single_hap` option (the wrapper script handles this automatically based on `check_depth` output).
+For male samples on chrX, add the `--single_hap` option (the wrapper script handles this automatically based on `check_depth` output).
 
 **Output files** (using `output/NA12877.chr22` as the output prefix):
 

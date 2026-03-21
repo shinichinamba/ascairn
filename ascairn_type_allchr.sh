@@ -39,21 +39,20 @@ fi
 ##########
 ascairn check_depth \
     "${BAM_FILE}" \
-    "${DATA_DIR}/chr22_long_arm_${REFERENCE}.bed" \
-    "${OUTPUT_PREFIX}.depth.txt" \
-    --x_region_file "${DATA_DIR}/chrX_short_arm_${REFERENCE}.bed" \
-    --threads "${THREAD_NUM}"
+    -o "${OUTPUT_PREFIX}.depth.txt" \
+    --baseline_region "${DATA_DIR}/chr22_long_arm_${REFERENCE}.bed" \
+    --x_region "${DATA_DIR}/chrX_short_arm_${REFERENCE}.bed" \
+    -t "${THREAD_NUM}"
 
 
 ascairn kmer_count \
     "${BAM_FILE}" \
-    "${DATA_DIR}/rare_kmer_list.fa" \
-    "${DATA_DIR}/cen_region_curated_margin_${REFERENCE}.bed" \
-    "${OUTPUT_PREFIX}.kmer_count.txt" \
-    --threads "${THREAD_NUM}"
+    -o "${OUTPUT_PREFIX}.kmer_count.txt" \
+    --kmer_file "${DATA_DIR}/rare_kmer_list.fa" \
+    --cen_region "${DATA_DIR}/cen_region_curated_margin_${REFERENCE}.bed" \
+    -t "${THREAD_NUM}"
 
 
-DEPTH="$(grep Coverage ${OUTPUT_PREFIX}.depth.txt | cut -d ' ' -f 2)"
 SEX="$(grep Sex ${OUTPUT_PREFIX}.depth.txt | cut -d ' ' -f 2)"
 
 echo -e "Chr\tCluster_1\tCluster_2\tHaplotype_1\tHaplotype_2" > ${OUTPUT_PREFIX}.cen_type.result.txt
@@ -64,17 +63,15 @@ do
     commands=(
         "ascairn" "cen_type" \
         "${OUTPUT_PREFIX}.kmer_count.txt" \
-        "${OUTPUT_PREFIX}.chr${CHR_IND}" \
-        "${DATA_DIR}/kmer_info/chr${CHR_IND}.kmer_info.txt.gz" \
-        "${DATA_DIR}/cluster_m3/chr${CHR_IND}.cluster_marker_count.txt.gz" \
-        "${DEPTH}" \
-        "--cluster_haplotype_file" \
-        "${DATA_DIR}/cluster_m3/chr${CHR_IND}.hap_cluster.txt"
+        "-o" "${OUTPUT_PREFIX}.chr${CHR_IND}" \
+        "--kmer_info" "${DATA_DIR}/kmer_info/chr${CHR_IND}.kmer_info.txt.gz" \
+        "--hap_info" "${DATA_DIR}/hap_info/chr${CHR_IND}.hap_info.txt" \
+        "--depth_file" "${OUTPUT_PREFIX}.depth.txt"
     )
 
     if [ $CHR_IND = "X" -a $SEX = "male" ]
     then
-        commands+=("--is_single_hap")
+        commands+=("--single_hap")
     fi
 
     ${commands[@]}

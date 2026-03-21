@@ -32,37 +32,25 @@ CHROMOSOMES = [
 ]
 
 
-def read_depth_from_file(depth_file):
-    with open(depth_file) as f:
-        for line in f:
-            if line.startswith("Coverage:"):
-                return line.split()[1]
-    raise ValueError("Coverage not found in depth file")
-
 
 @pytest.mark.parametrize("chrom,is_single_hap", CHROMOSOMES)
-def test_cen_type(chrom, is_single_hap, resource_dir, resource_version, output_dir, expected_dir):
+def test_cen_type(chrom, is_single_hap, panel_dir, output_dir, expected_dir):
     # Use expected files as input (independent of other tests)
     kmer_count_file = os.path.join(expected_dir, "NA12877.kmer_count.txt")
     depth_file = os.path.join(expected_dir, "NA12877.depth.txt")
-    depth = read_depth_from_file(depth_file)
 
     output_prefix = os.path.join(output_dir, f"NA12877.chr{chrom}")
-
-    # cluster directory name differs by version
-    cluster_dir = "cluster_m3" if resource_version == "ver_2024-12-06" else "cluster"
 
     cmd = [
         "ascairn", "cen_type",
         kmer_count_file,
-        output_prefix,
-        os.path.join(resource_dir, "kmer_info", f"chr{chrom}.kmer_info.txt.gz"),
-        os.path.join(resource_dir, cluster_dir, f"chr{chrom}.cluster_marker_count.txt.gz"),
-        depth,
-        "--cluster_haplotype_file", os.path.join(resource_dir, cluster_dir, f"chr{chrom}.hap_cluster.txt"),
+        "-o", output_prefix,
+        "--kmer_info", os.path.join(panel_dir, "kmer_info", f"chr{chrom}.kmer_info.txt.gz"),
+        "--hap_info", os.path.join(panel_dir, "hap_info", f"chr{chrom}.hap_info.txt"),
+        "--depth_file", depth_file,
     ]
     if is_single_hap:
-        cmd.append("--is_single_hap")
+        cmd.append("--single_hap")
 
     subprocess.run(cmd, check=True, env=os.environ)
 

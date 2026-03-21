@@ -18,8 +18,8 @@ def resource_version():
 
 
 @pytest.fixture(scope="session")
-def resource_dir():
-    """Clone ascairn_resource (devel branch) if not exists and return path."""
+def _ascairn_resource_path():
+    """Clone ascairn_resource (devel branch) if not exists and return base path."""
     resource_path = os.path.join(TESTS_DIR, "ascairn_resource")
     if not os.path.exists(resource_path):
         subprocess.run(
@@ -27,7 +27,19 @@ def resource_dir():
             cwd=TESTS_DIR,
             check=True,
         )
-    return os.path.join(resource_path, "resource", "legacy", RESOURCE_VERSION)
+    return resource_path
+
+
+@pytest.fixture(scope="session")
+def resource_dir(_ascairn_resource_path):
+    """Legacy resource directory."""
+    return os.path.join(_ascairn_resource_path, "resource", "legacy", RESOURCE_VERSION)
+
+
+@pytest.fixture(scope="session")
+def panel_dir(_ascairn_resource_path):
+    """Panel resource directory (kmer_info/ + hap_info/)."""
+    return os.path.join(_ascairn_resource_path, "resource", "panel", "ascairn_paper_2025")
 
 
 @pytest.fixture(scope="session")

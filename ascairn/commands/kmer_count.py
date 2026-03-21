@@ -7,11 +7,11 @@ logger = get_logger(__name__)
 
 @click.command()
 @click.argument("bam_file", type=click.Path(exists=False))
-@click.argument("kmer_file", type=click.Path(exists=True))
-@click.argument("cen_region_file", type=click.Path(exists=True))
-@click.argument("output_file", type=click.Path())
+@click.option("-o", "--output_file", required=True, type=click.Path())
+@click.option("--kmer_file", required=True, type=click.Path(exists=True))
+@click.option("--cen_region", "cen_region_file", required=True, type=click.Path(exists=True))
 @click.option("-t", "--threads", default=4, help="Number of threads to use.")
-def kmer_count_command(bam_file, kmer_file, cen_region_file, output_file, threads):
+def kmer_count_command(bam_file, output_file, kmer_file, cen_region_file, threads):
 
 
     # check if the executables exist

@@ -12,10 +12,10 @@ def test_kmer_count(s3_cram, resource_dir, output_dir, expected_dir):
         [
             "ascairn", "kmer_count",
             s3_cram,
-            os.path.join(resource_dir, "rare_kmer_list.fa"),
-            os.path.join(resource_dir, "cen_region_curated_margin_hg38.bed"),
-            output_file,
-            "--threads", "4",
+            "-o", output_file,
+            "--kmer_file", os.path.join(resource_dir, "rare_kmer_list.fa"),
+            "--cen_region", os.path.join(resource_dir, "cen_region_curated_margin_hg38.bed"),
+            "-t", "4",
         ],
         check=True,
     )

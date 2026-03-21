@@ -20,10 +20,10 @@ def test_check_depth(s3_cram, resource_dir, output_dir, expected_dir):
         [
             "ascairn", "check_depth",
             s3_cram,
-            os.path.join(resource_dir, "chr22_long_arm_hg38.bed"),
-            output_file,
-            "--x_region_file", os.path.join(resource_dir, "chrX_short_arm_hg38.bed"),
-            "--threads", "4",
+            "-o", output_file,
+            "--baseline_region", os.path.join(resource_dir, "chr22_long_arm_hg38.bed"),
+            "--x_region", os.path.join(resource_dir, "chrX_short_arm_hg38.bed"),
+            "-t", "4",
         ],
         check=True,
     )
