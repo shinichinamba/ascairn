@@ -26,6 +26,8 @@ def read_sex_from_depth_file(depth_file):
 def type_all_command(bam_file, output_prefix, resource_dir, reference, threads):
     """Run the full ascairn workflow (check_depth, kmer_count, cen_type for all chromosomes)."""
 
+    os.environ["POLARS_MAX_THREADS"] = str(threads)
+
     # make directory for the output prefix
     output_dir = os.path.dirname(output_prefix)
     if output_dir != '' and not os.path.exists(output_dir):
