@@ -1,0 +1,27 @@
+name: Repository test
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v5
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install python dependencies
+      run: |
+        pip install pytest
+        pip install .
+    - name: Clone ascairn_resource
+      run: |
+        git clone https://github.com/friend1ws/ascairn_resource.git tests/ascairn_resource
+    - name: Run tests
+      run: |
+        pytest tests/test_cen_type.py -v
