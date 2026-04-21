@@ -57,7 +57,7 @@ SEX="$(grep Sex ${OUTPUT_PREFIX}.depth.txt | cut -d ' ' -f 2)"
 
 FIRST_CHR=1
 
-for CHR_IND in `seq 1 22` X
+for CHR_IND in `seq 1 22` X Y
 do
 
     commands=(
@@ -72,6 +72,14 @@ do
     if [ $CHR_IND = "X" -a $SEX = "male" ]
     then
         commands+=("--single_hap")
+    elif [ $CHR_IND = "Y" ]
+    then
+        if [ $SEX != "male" ] || [ ! -s "${DATA_DIR}/kmer_info/chr${CHR_IND}.kmer_info.txt.gz" ] || [ ! -s "${DATA_DIR}/hap_info/chr${CHR_IND}.hap_info.txt" ]
+        then
+            continue
+        else
+            commands+=("--single_hap")
+        fi
     fi
 
     ${commands[@]}
