@@ -11,11 +11,11 @@
 `ascairn` (alpha-satellite cairn) is software for estimating centromere variation from short-read sequencing data using rare k-mers within centromere sequences.
 For each chromosome, ascairn identifies the most likely pair of active alpha satellite higher-order repeat (HOR) haplogroups and the nearest proxy haplotypes from a reference panel ([Shiraishi et al., bioRxiv, 2025](https://doi.org/10.1101/2025.07.26.666712)).
 
-Both GRCh38 (hg38) and T2T-CHM13 (chm13) reference genomes are supported. Centromere region BED files for each reference are included in the resource repository.
+ascairn accepts BAM/CRAM files aligned to either GRCh38 (hg38) or T2T-CHM13 (chm13). Centromere region BED files for each alignment reference are included in the resource repository.
 
 ## Background
 
-Human centromeres are composed largely of chromosome-specific alpha satellite HOR arrays. The active alpha satellite HOR arrays, which are associated with CENP-A and kinetochore formation, show extensive sequence and structural variation among individuals. Because these regions are long and highly repetitive, they have historically been difficult to analyze with conventional short-read sequencing.
+Human centromeres are composed largely of chromosome-specific alpha satellite higher-order repeat (HOR) arrays. The active alpha satellite HOR arrays (aHOR arrays), which are associated with CENP-A and kinetochore formation, show extensive sequence and structural variation among individuals. Because aHOR arrays are long and highly repetitive, they have historically been difficult to analyze with conventional short-read sequencing.
 
 <div align="center">
   <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/centromere_structure_overview.png" alt="Active alpha satellite HOR arrays and structural diversity among centromere haplotypes" width="750">
@@ -25,9 +25,9 @@ Long-read assemblies have recently revealed many complete centromeric haplotypes
 
 ## What is a centromere haplogroup?
 
-In ascairn, a centromere haplogroup is a chromosome-specific cluster of active alpha satellite HOR haplotypes that share similar rare k-mer profiles. These haplogroups are inferred from a reference panel of assembled centromeric haplotypes and often correspond to evolutionarily related centromere lineages with distinct structural features, such as differences in HOR organization, array size, or large structural variants.
+In ascairn, a centromere haplogroup is a chromosome-specific cluster of active alpha satellite HOR haplotypes (aHOR-haps) that share similar rare k-mer profiles. These haplogroups are inferred from a reference panel of assembled aHOR-haps (the reference aHOR-hap panel) and often correspond to evolutionarily related centromere lineages with distinct structural features, such as differences in HOR organization, array size, or large structural variants.
 
-Centromere haplogroups are not genome-wide ancestry labels. They describe variation at individual centromeres, one chromosome at a time.
+Centromere haplogroups are assigned separately for each chromosome, describing variation at each individual centromere.
 
 <div align="center">
   <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/categorization_overview.png" alt="Rare k-mer based classification of centromere haplotypes" width="750">
@@ -35,15 +35,15 @@ Centromere haplogroups are not genome-wide ancestry labels. They describe variat
 
 ## What ascairn does
 
-ascairn infers centromere haplogroups from short-read whole-genome sequencing data. It extracts reads aligned to centromeric alpha satellite regions, counts predefined rare k-mers, and uses a probabilistic model to identify the most likely pair of centromere haplogroups for each chromosome. It also reports the closest proxy haplotypes from the reference panel.
+ascairn infers aHOR-HGs from short-read whole-genome sequencing data. It extracts reads aligned to centromeric alpha satellite regions, generates a predefined rare k-mer count profile, and uses a probabilistic model to identify the most likely aHOR-HG pair for each chromosome. It also reports the closest proxy aHOR-hap pair from the reference aHOR-hap panel.
 
 The main outputs are:
 
-- the best-matching centromere haplogroup (cluster) pair,
-- the nearest proxy haplotype pair,
+- the best-matching aHOR-HG (cluster) pair,
+- the nearest proxy aHOR-hap pair,
 - marker-level probability tables supporting the assignment.
 
-ascairn does not assemble centromeres de novo. Its results depend on sequencing depth, read alignment quality, and the representation of related haplotypes in the supplied reference panel.
+ascairn does not assemble centromeres de novo. Its results depend on sequencing depth, read alignment quality, and the representation of related aHOR-haps in the supplied reference panel.
 
 <div align="center">
   <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/ascairn_workflow.png" alt="Overview of the ascairn framework" width="750">
