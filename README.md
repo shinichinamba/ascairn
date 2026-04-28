@@ -45,6 +45,8 @@ ascairn does not assemble centromeres de novo. Its results depend on sequencing 
   <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/ascairn_workflow.png" alt="Overview of the ascairn framework" width="750">
 </div>
 
+For more background, see [Centromere haplogroups](docs/centromere_haplogroups.md) and [Applications](docs/applications.md).
+
 ## Prerequisites
 
 ### Software
