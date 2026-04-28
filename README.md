@@ -17,6 +17,10 @@ Both GRCh38 (hg38) and T2T-CHM13 (chm13) reference genomes are supported. Centro
 
 Human centromeres are composed largely of chromosome-specific alpha satellite HOR arrays. The active alpha satellite HOR arrays, which are associated with CENP-A and kinetochore formation, show extensive sequence and structural variation among individuals. Because these regions are long and highly repetitive, they have historically been difficult to analyze with conventional short-read sequencing.
 
+<div align="center">
+  <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/centromere_structure_overview.png" alt="Active alpha satellite HOR arrays and structural diversity among centromere haplotypes" width="750">
+</div>
+
 Long-read assemblies have recently revealed many complete centromeric haplotypes. However, applying long-read sequencing to thousands of population-scale or clinical samples remains costly and often impractical. ascairn addresses this gap by using rare k-mers within centromeric alpha satellite arrays as short-read-detectable markers of centromere haplotype structure.
 
 ## What is a centromere haplogroup?
