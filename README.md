@@ -18,7 +18,8 @@ ascairn accepts BAM/CRAM files aligned to either GRCh38 (hg38) or T2T-CHM13 (chm
 Human centromeres are composed largely of chromosome-specific alpha satellite higher-order repeat (HOR) arrays. The active alpha satellite HOR arrays (aHOR arrays), which are associated with CENP-A and kinetochore formation, show extensive sequence and structural variation among individuals. Because aHOR arrays are long and highly repetitive, they have historically been difficult to analyze with conventional short-read sequencing.
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/centromere_structure_overview.png" alt="Active alpha satellite HOR arrays and structural diversity among centromere haplotypes" width="750">
+  <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/centromere_structure_overview.png" alt="Active alpha satellite HOR arrays and structural diversity among centromere haplotypes" width="600">
+  <p><em>aHOR-haps comprise the aHOR array and flanking regions, and vary in size, KAS position, HOR pattern, and structural variants.</em></p>
 </div>
 
 Long-read assemblies have recently revealed many complete centromeric haplotypes. However, applying long-read sequencing to thousands of population-scale or clinical samples remains costly and often impractical. ascairn addresses this gap by using rare k-mers within centromeric alpha satellite arrays as short-read-detectable markers of centromere haplotype structure.
