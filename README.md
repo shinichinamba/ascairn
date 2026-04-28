@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="image/karamatsu_cairn.png" alt="Cairn at Mt. Karamatsu" width="250">
+  <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/karamatsu_cairn.png" alt="Cairn at Mt. Karamatsu" width="250">
   <p>Maruyama cairn at Mt. Karamatsu</p>
 </div>
 
@@ -14,7 +14,7 @@ For each chromosome, ascairn identifies the most likely pair of centromere clust
 Both GRCh38 (hg38) and T2T-CHM13 (chm13) reference genomes are supported. Centromere region BED files for each reference are included in the resource repository.
 
 <div align="center">
-  <img src="image/categorization_overview.png" alt="Overview of centromere classification using rare k-mer" width="750">
+  <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/categorization_overview.png" alt="Overview of centromere classification using rare k-mer" width="750">
 </div>
 
 ## Prerequisites
@@ -229,7 +229,7 @@ ascairn kmer_count \
     seq_data/NA12877.final.cram \
     -o output/NA12877.kmer_count.txt \
     --kmer_file ascairn_resource/resource/panel/ascairn_paper_2025/rare_kmer_list.fa \
-    --cen_region ascairn_resource/resource/common/cen_region_hg38.bed \
+    --cen_region ascairn_resource/resource/common/cen_region_curated_margin_hg38.bed \
     -t 8
 ```
 
@@ -300,13 +300,13 @@ The figures below show haplogroup pair assignment accuracy (precision) for each 
 **GRCh38-aligned data:**
 
 <div align="center">
-  <img src="image/cluster_match_hg38.png" alt="Accuracy on GRCh38-aligned data" width="750">
+  <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/cluster_match_hg38.png" alt="Accuracy on GRCh38-aligned data" width="750">
 </div>
 
 **CHM13-aligned data:**
 
 <div align="center">
-  <img src="image/cluster_match_chm13.png" alt="Accuracy on CHM13-aligned data" width="750">
+  <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/cluster_match_chm13.png" alt="Accuracy on CHM13-aligned data" width="750">
 </div>
 
 Accuracy is generally high (>90%) for most chromosomes at coverage ≥ 5x, with comparable performance between GRCh38- and CHM13-aligned data. See [Shiraishi et al., bioRxiv, 2025](https://doi.org/10.1101/2025.07.26.666712) for details.
