@@ -45,7 +45,8 @@ Some haplogroups are associated with large structural variants:
 
 Other haplogroups are associated with differences in HOR organization:
 - chromosome 17 (D17Z1) haplogroups associated with different HOR patterns (13-mer vs. two distinct 16-mer HORs),
-- chromosome 7 (D7Z1) and chromosome 11 (D11Z1) haplogroups associated with atypical HOR structures (12-mer in C7-aHOR-HG 4 within a 6-mer-dominant array; atypical 6-mer in C11-aHOR-HGs 6 and 7 within a 5-mer-dominant array).
+- chromosome 7 (D7Z1) haplogroups associated with an atypical 12-mer HOR (C7-aHOR-HG 4) within a 6-mer-dominant array,
+- chromosome 11 (D11Z1) haplogroups associated with an atypical 6-mer HOR (C11-aHOR-HGs 6 and 7) within a 5-mer-dominant array.
 
 <div align="center">
   <img src="../image/FigureS2D.png" alt="HOR monomer composition profiles across chromosomes" width="900">
