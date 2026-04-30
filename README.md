@@ -26,13 +26,15 @@ Long-read assemblies have recently revealed many complete centromeric haplotypes
 
 ## What is a centromere haplogroup?
 
-In ascairn, a centromere haplogroup is a chromosome-specific cluster of active alpha satellite HOR haplotypes (aHOR-haps) that share similar rare k-mer profiles. These haplogroups are inferred from a reference panel of assembled aHOR-haps (the reference aHOR-hap panel) and often correspond to evolutionarily related centromere lineages with distinct structural features, such as differences in HOR organization, array size, or large structural variants.
+In ascairn, a centromere haplogroup is a chromosome-specific cluster of active alpha satellite HOR haplotypes (aHOR-haps) that share similar rare k-mer profiles, which serve as lineage-specific markers. These haplogroups are inferred from a reference panel of assembled aHOR-haps (the reference aHOR-hap panel) and often correspond to evolutionarily related centromere lineages with distinct structural features, such as differences in HOR organization, array size, or large structural variants.
 
 Centromere haplogroups are assigned separately for each chromosome, describing variation at each individual centromere.
 
 <div align="center">
   <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/categorization_overview.png" alt="Rare k-mer based classification of centromere haplotypes" width="750">
 </div>
+
+For more background, see [Centromere haplogroups](docs/centromere_haplogroups.md).
 
 ## What ascairn does
 
@@ -50,7 +52,7 @@ ascairn does not assemble centromeres de novo. Its results depend on sequencing 
   <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/ascairn_workflow.png" alt="Overview of the ascairn framework" width="750">
 </div>
 
-For more background, see [Centromere haplogroups](docs/centromere_haplogroups.md) and [Applications](docs/applications.md).
+For more on the applications of ascairn, see [Applications](docs/applications.md).
 
 ## Prerequisites
 
