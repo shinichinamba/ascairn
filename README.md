@@ -335,25 +335,24 @@ These files list all candidate pairs ranked by log-likelihood (higher = better f
 
 We evaluated ascairn using leave-one-individual-out cross-validation on the reference panel: for each individual, both parental aHOR-haps were removed from the panel, and the resulting model was used to infer the haplogroup pair from the individual's short-read WGS data. To assess robustness to sequencing depth, each sample was downsampled to 1–30x coverage.
 
-The figures below show haplogroup pair assignment accuracy (precision) for each chromosome at various downsampled coverages, for short-read WGS data aligned to GRCh38 (upper) and CHM13 v2.0 (lower):
+The figures below show haplogroup pair assignment accuracy for each chromosome at various downsampled coverages, for short-read WGS data aligned to GRCh38 (upper) and CHM13 v2.0 (lower):
 
 **GRCh38-aligned data:**
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/cluster_match_hg38.png" alt="Accuracy on GRCh38-aligned data" width="750">
+  <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/cluster_match_m3.heatmap.labeled.png" alt="Accuracy on GRCh38-aligned data" width="750">
 </div>
 
 **CHM13-aligned data:**
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/cluster_match_chm13.png" alt="Accuracy on CHM13-aligned data" width="750">
+  <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/cluster_match_chm13_m3.heatmap.labeled.png" alt="Accuracy on CHM13-aligned data" width="750">
 </div>
 
 Accuracy is generally high (>90%) for most chromosomes at coverage ≥ 5x, with comparable performance between GRCh38- and CHM13-aligned data. See [Shiraishi et al., bioRxiv, 2025](https://doi.org/10.1101/2025.07.26.666712) for details.
 
 ## Notes
 
-- **CHM13 support**: ascairn supports both GRCh38 (hg38) and T2T-CHM13 (chm13) aligned BAM/CRAM files. Specify the reference genome via `--reference hg38` or `--reference chm13`. The centromere region BED files for each reference are provided in `resource/common/`.
 - **chrY**: chrY is processed only for male samples (determined automatically by `check_depth` from the chrX coverage ratio).
 - **Test data**: The Quick Start example uses NA12877 from the 1000 Genomes Project high-coverage dataset. This sample was chosen because it is publicly accessible via both AWS S3 and FTP, enabling reproducible testing without restricted data access.
 
