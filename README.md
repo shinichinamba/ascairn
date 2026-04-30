@@ -40,6 +40,8 @@ For more background, see [Centromere haplogroups](docs/centromere_haplogroups.md
 
 ascairn infers aHOR-HGs from short-read whole-genome sequencing data. It extracts reads aligned to centromeric alpha satellite regions, generates a predefined rare k-mer count profile, and uses a probabilistic model to identify the most likely aHOR-HG pair for each chromosome. It also reports the closest proxy aHOR-hap pair from the reference aHOR-hap panel.
 
+The reference aHOR-hap panel was constructed in advance by extracting centromeric sequences from publicly available long-read assemblies (HPRC, HGSVC, T2T Consortium) and is distributed through the [ascairn_resource repository](https://github.com/friend1ws/ascairn_resource).
+
 The main outputs are:
 
 - the best-matching aHOR-HG (cluster) pair,
@@ -48,12 +50,12 @@ The main outputs are:
 
 ascairn does not assemble centromeres de novo. Its results depend on sequencing depth, read alignment quality, and the representation of related aHOR-haps in the supplied reference panel.
 
+For more on the applications of ascairn, see [Applications](docs/applications.md).
+
 <div align="center">
   <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/ascairn_workflow.png" alt="Overview of the ascairn framework" width="600">
   <p><em>Overview of the ascairn workflow. Short-read WGS data are processed to count rare k-mers in centromeric regions; a probabilistic model is then used to infer the most likely aHOR-HG pair and the nearest proxy aHOR-hap pair from the reference panel.</em></p>
 </div>
-
-For more on the applications of ascairn, see [Applications](docs/applications.md).
 
 ## Prerequisites
 
