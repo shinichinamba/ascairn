@@ -28,21 +28,29 @@ These haplogroups often correspond to evolutionarily related centromere lineages
 
 Centromere haplogroups are chromosome-specific. For example, a chromosome 1 haplogroup and a chromosome 19 haplogroup describe variation at different centromeres and should not be interpreted as a single genome-wide ancestry label.
 
+Rare k-mer-based haplogroups can capture structural and HOR-pattern features even when the clustering itself is based only on k-mer profiles. Examples described in the ascairn study include the following.
+
+### Structural variants
+
+Some haplogroups are associated with large structural variants:
+- chromosome 1 (D1Z7) haplogroups associated with a large inversion,
+- chromosome 19 (D19Z3) haplogroups associated with insertion of inactive alpha satellite HOR sequence.
+
 <div align="center">
   <img src="../image/Figure2AB.png" alt="Chromosome 1 D1Z7 and chromosome 19 D19Z3 rare k-mer heatmaps and haplogroup structures" width="900">
   <p><em>Examples from chromosome 1 (D1Z7) and chromosome 19 (D19Z3): rare k-mer profiles cluster aHOR-haps into discrete haplogroups. The adjacent structural tracks illustrate that some haplogroups correspond to recognizable structural features, including a large inversion in D1Z7 and insertion of inactive alpha satellite HOR sequence in D19Z3.</em></p>
 </div>
 
-## Structural feature examples
+### HOR pattern differences
 
-Rare k-mer-based haplogroups can capture structural features even when the clustering itself is based only on k-mer profiles.
+Other haplogroups are associated with differences in HOR organization:
+- chromosome 17 (D17Z1) haplogroups associated with different HOR patterns (13-mer vs. two distinct 16-mer HORs),
+- chromosome 7 (D7Z1) and chromosome 11 (D11Z1) haplogroups associated with atypical HOR structures (12-mer in C7-aHOR-HG 4 within a 6-mer-dominant array; atypical 6-mer in C11-aHOR-HGs 6 and 7 within a 5-mer-dominant array).
 
-Examples described in the ascairn study include:
-
-- chromosome 1 D1Z7 haplogroups associated with a large inversion,
-- chromosome 19 D19Z3 haplogroups associated with insertion of inactive alpha satellite HOR sequence,
-- chromosome 17 D17Z1 haplogroups associated with different HOR patterns,
-- chromosome 7 and chromosome 11 haplogroups associated with atypical HOR structures.
+<div align="center">
+  <img src="../image/FigureS2D.png" alt="HOR monomer composition profiles across chromosomes" width="900">
+  <p><em>Position-aware HOR monomer composition along aHOR-haps for chromosomes with notable HOR pattern differences. Each row corresponds to one aHOR-hap, with HOR monomer types color-coded along the array.</em></p>
+</div>
 
 These examples illustrate why haplogroup assignment can be biologically informative: the selected haplogroup provides a compact summary of centromere structure, while the selected proxy haplotype provides a reference sequence that approximates the individual's centromeric haplotype.
 
