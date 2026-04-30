@@ -29,10 +29,9 @@ These haplogroups often correspond to evolutionarily related centromere lineages
 Centromere haplogroups are chromosome-specific. For example, a chromosome 1 haplogroup and a chromosome 19 haplogroup describe variation at different centromeres and should not be interpreted as a single genome-wide ancestry label.
 
 <div align="center">
-  <img src="../image/chr19_hor_heatmap.png" alt="Chromosome 19 D19Z3 rare k-mer heatmap and haplogroup structure" width="850">
+  <img src="../image/Figure2AB.png" alt="Chromosome 1 D1Z7 and chromosome 19 D19Z3 rare k-mer heatmaps and haplogroup structures" width="900">
+  <p><em>Examples from chromosome 1 (D1Z7) and chromosome 19 (D19Z3): rare k-mer profiles cluster aHOR-haps into discrete haplogroups. The adjacent structural tracks illustrate that some haplogroups correspond to recognizable structural features, including a large inversion in D1Z7 and insertion of inactive alpha satellite HOR sequence in D19Z3.</em></p>
 </div>
-
-This chromosome 19 D19Z3 example shows how rare k-mer profiles cluster aHOR-haps into discrete haplogroups. The adjacent structural track illustrates that some haplogroups correspond to recognizable structural features, including insertion of inactive alpha satellite HOR sequence.
 
 ## Structural feature examples
 
