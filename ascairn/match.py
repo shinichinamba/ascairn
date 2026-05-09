@@ -111,8 +111,8 @@ def build_cluster_marker_count(kmer_info_file, hap_info_file):
 
     # Auto-detect max_copy_number from actual data
     max_copy_number = hap_marker_count["copy_number"].max()
-    if max_copy_number >= 3:
-        raise ValueError(f"Max copy number in kmer_info is {max_copy_number} (>= 3). This is not supported.")
+    if max_copy_number >= 4:
+        raise ValueError(f"Max copy number in kmer_info is {max_copy_number} (>= 4). This is not supported.")
 
     # Get all unique markers and haplotypes for complete combinations
     unique_markers = hap_marker_count.select("Marker").unique()
