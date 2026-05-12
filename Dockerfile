@@ -33,9 +33,6 @@ RUN wget https://github.com/brentp/mosdepth/releases/download/v0.3.9/mosdepth &&
     chmod +x mosdepth && \
     mv mosdepth /usr/local/bin/
 
-RUN python3 -m pip install --upgrade pip
-# upgrading pip to properly process pyproject.toml: https://github.com/pypa/setuptools/issues/3269#issuecomment-2135090223
-
 RUN python3 -m pip install --upgrade setuptools --break-system-packages
 # RUN python3 -m pip install boto3
 
