@@ -111,8 +111,8 @@ def build_cluster_marker_count(kmer_info_file, hap_info_file):
 
     # Auto-detect max_copy_number from actual data
     max_copy_number = hap_marker_count["copy_number"].max()
-    if max_copy_number >= 3:
-        raise ValueError(f"Max copy number in kmer_info is {max_copy_number} (>= 3). This is not supported.")
+    if max_copy_number >= 4:
+        raise ValueError(f"Max copy number in kmer_info is {max_copy_number} (>= 4). This is not supported.")
 
     # Get all unique markers and haplotypes for complete combinations
     unique_markers = hap_marker_count.select("Marker").unique()
@@ -396,7 +396,7 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
 
     PR12_count.write_csv(output_prefix + ".haplotype.marker_prob.txt", separator = '\t')
 
-    # Write result.txt with hap_info annotations auto-expanded
+    # Write cen_type.txt with hap_info annotations auto-expanded
     best_hap1 = D_LL2[0, "Haplotype1"]
     best_hap2 = D_LL2[0, "Haplotype2"]
     best_cl1 = D_LL[0, "Cluster1"]
@@ -412,7 +412,7 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
         result_data[f"{col}_1"] = [row1[0, col] if row1.height > 0 else "NA"]
         result_data[f"{col}_2"] = [row2[0, col] if row2.height > 0 else "NA"]
 
-    pl.DataFrame(result_data).write_csv(output_prefix + ".result.txt", separator='\t')
+    pl.DataFrame(result_data).write_csv(output_prefix + ".cen_type.txt", separator='\t')
 
 
 def match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_file, hap_info_file, depth,
@@ -599,7 +599,7 @@ def match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_fil
 
     PR1_count.write_csv(output_prefix + ".haplotype.marker_prob.txt", separator = '\t')
 
-    # Write result.txt with hap_info annotations auto-expanded
+    # Write cen_type.txt with hap_info annotations auto-expanded
     best_hap1 = D_LL2[0, "Haplotype1"]
     best_cl1 = D_LL[0, "Cluster1"]
 
@@ -612,4 +612,4 @@ def match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_fil
         result_data[f"{col}_1"] = [row1[0, col] if row1.height > 0 else "NA"]
         result_data[f"{col}_2"] = ["NA"]
 
-    pl.DataFrame(result_data).write_csv(output_prefix + ".result.txt", separator='\t')
+    pl.DataFrame(result_data).write_csv(output_prefix + ".cen_type.txt", separator='\t')

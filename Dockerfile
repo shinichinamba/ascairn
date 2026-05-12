@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 LABEL maintainer="Yuichi Shiraishi <friend1ws@gmail.com>" 
 
 ENV TZ=Asia/Tokyo
@@ -27,12 +27,6 @@ RUN wget https://github.com/samtools/samtools/releases/download/1.21/samtools-1.
 	./configure && make && make install && \
 	cd .. && rm -rf samtools-1.21 samtools-1.21.tar.bz2
 
-# RUN wget https://github.com/gmarcais/Jellyfish/releases/download/v2.3.0/jellyfish-2.3.0.tar.gz && \
-#     tar -zxvf jellyfish-2.3.0.tar.gz && \
-#     cd jellyfish-2.3.0 && \
-#     ./configure && make && make install && \
-#     cd .. && rm -rf jellyfish-2.3.0 jellyfish-2.3.0.tar.gz
-
 RUN apt update && apt install -y jellyfish
 
 RUN wget https://github.com/brentp/mosdepth/releases/download/v0.3.9/mosdepth && \
@@ -42,10 +36,11 @@ RUN wget https://github.com/brentp/mosdepth/releases/download/v0.3.9/mosdepth &&
 RUN python3 -m pip install --upgrade pip
 # upgrading pip to properly process pyproject.toml: https://github.com/pypa/setuptools/issues/3269#issuecomment-2135090223
 
-RUN python3 -m pip install --upgrade setuptools
+RUN python3 -m pip install --upgrade setuptools --break-system-packages
 # RUN python3 -m pip install boto3
 
 RUN git clone https://github.com/shinichinamba/ascairn.git && \
 	cd ascairn && \
-	python3 -m pip install . 
+	python3 -m pip install . --break-system-packages && \
+	which ascairn 
 

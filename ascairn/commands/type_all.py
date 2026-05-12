@@ -23,7 +23,9 @@ def read_sex_from_depth_file(depth_file):
 @click.option("--reference", required=True, type=click.Choice(["hg38", "chm13"]),
               help="Reference genome build for the BAM file.")
 @click.option("-t", "--threads", default=8, help="Number of threads to use.")
-def type_all_command(bam_file, output_prefix, resource_dir, reference, threads):
+@click.option("--debug", is_flag=True, default=False,
+              help="Keep per-chromosome intermediate files (cen_type.txt, cluster/haplotype tables).")
+def type_all_command(bam_file, output_prefix, resource_dir, reference, threads, debug):
     """Run the full ascairn workflow (check_depth, kmer_count, cen_type for all chromosomes)."""
 
     os.environ["POLARS_MAX_THREADS"] = str(threads)
@@ -64,10 +66,14 @@ def type_all_command(bam_file, output_prefix, resource_dir, reference, threads):
     sex = read_sex_from_depth_file(depth_file)
 
     # Step 3: cen_type for each chromosome
-    chromosomes = [str(i) for i in range(1, 23)] + ["X"]
+    chromosomes = [str(i) for i in range(1, 23)] + ["X", "Y"]
     first_chr = True
 
     for chrom in chromosomes:
+        # chrY only exists in males
+        if chrom == "Y" and sex != "male":
+            continue
+
         chr_prefix = f"{output_prefix}.chr{chrom}"
         logger.info(f"Step 3: Running cen_type for chr{chrom}")
 
@@ -79,14 +85,14 @@ def type_all_command(bam_file, output_prefix, resource_dir, reference, threads):
             "--hap_info", os.path.join(resource_dir, "hap_info", f"chr{chrom}.hap_info.txt"),
             "--depth_file", depth_file,
         ]
-        if chrom == "X" and sex == "male":
+        if chrom in ("X", "Y") and sex == "male":
             cmd.append("--single_hap")
 
         subprocess.run(cmd, check=True)
 
-        # Aggregate per-chromosome result.txt
-        result_file = f"{output_prefix}.cen_type.result.txt"
-        chr_result = f"{chr_prefix}.result.txt"
+        # Aggregate per-chromosome cen_type.txt
+        result_file = f"{output_prefix}.cen_type_all.txt"
+        chr_result = f"{chr_prefix}.cen_type.txt"
 
         if first_chr:
             with open(chr_result) as f_in, open(result_file, 'w') as f_out:
@@ -101,4 +107,12 @@ def type_all_command(bam_file, output_prefix, resource_dir, reference, threads):
                 data = f_in.readline().rstrip('\n')
                 f_out.write(f"chr{chrom}\t{data}\n")
 
-    logger.info(f"Completed. Results written to {output_prefix}.cen_type.result.txt")
+        # Remove per-chromosome intermediate files unless --debug is set
+        if not debug:
+            for suffix in ("cen_type.txt", "cluster.hap_pair.txt", "cluster.marker_prob.txt",
+                           "haplotype.hap_pair.txt", "haplotype.marker_prob.txt"):
+                path = f"{chr_prefix}.{suffix}"
+                if os.path.exists(path):
+                    os.remove(path)
+
+    logger.info(f"Completed. Results written to {output_prefix}.cen_type_all.txt")

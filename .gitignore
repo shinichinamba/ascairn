@@ -9,4 +9,9 @@ dist/
 *.bk
 .claude/
 ascairn_resource/
+tests/ascairn_resource
+*.bam
+*.bai
+*.cram
+*.crai
 plan/

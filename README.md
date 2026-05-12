@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="image/karamatsu_cairn.png" alt="Cairn at Mt. Karamatsu" width="250">
+  <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/karamatsu_cairn.png" alt="Cairn at Mt. Karamatsu" width="250">
   <p>Maruyama cairn at Mt. Karamatsu</p>
 </div>
 
@@ -9,12 +9,52 @@
 ![CI](https://github.com/friend1ws/ascairn/actions/workflows/python-test.yml/badge.svg)
 
 `ascairn` (alpha-satellite cairn) is software for estimating centromere variation from short-read sequencing data using rare k-mers within centromere sequences.
-For each chromosome, ascairn identifies the most likely pair of centromere clusters and the nearest haplotypes from a reference panel ([Shiraishi et al., bioRxiv, 2025](https://doi.org/10.1101/2025.07.26.666712)).
+For each chromosome, ascairn identifies the most likely pair of active alpha satellite higher-order repeat (HOR) haplogroups and the nearest proxy haplotypes from a reference panel ([Shiraishi et al., bioRxiv, 2025](https://doi.org/10.1101/2025.07.26.666712)).
 
-Both GRCh38 (hg38) and T2T-CHM13 (chm13) reference genomes are supported. Centromere region BED files for each reference are included in the resource repository.
+ascairn accepts BAM/CRAM files aligned to either GRCh38 (hg38) or T2T-CHM13 (chm13). Centromere region BED files for each alignment reference are included in the resource repository.
+
+## Background
+
+Human centromeres are composed largely of chromosome-specific alpha satellite higher-order repeat (HOR) arrays. The active alpha satellite HOR arrays (aHOR arrays), which are associated with CENP-A and kinetochore formation, show extensive sequence and structural variation among individuals. Because aHOR arrays are long and highly repetitive, they have historically been difficult to analyze with conventional short-read sequencing.
 
 <div align="center">
-  <img src="image/categorization_overview.png" alt="Overview of centromere classification using rare k-mer" width="750">
+  <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/centromere_structure_overview.png" alt="Active alpha satellite HOR arrays and structural diversity among centromere haplotypes" width="600">
+  <p><em>aHOR-haps comprise the aHOR array and flanking regions, and vary in size, KAS position, HOR pattern, and structural variants.</em></p>
+</div>
+
+Long-read assemblies have recently revealed many complete centromeric haplotypes. However, applying long-read sequencing to thousands of population-scale or clinical samples remains costly and often impractical. ascairn addresses this gap by using rare k-mers within centromeric alpha satellite arrays as short-read-detectable markers of centromere haplotype structure.
+
+## What is a centromere haplogroup?
+
+In ascairn, a centromere haplogroup is a chromosome-specific cluster of active alpha satellite HOR haplotypes (aHOR-haps) that share similar rare k-mer profiles, which serve as lineage-specific markers. These haplogroups are inferred from a reference panel of assembled aHOR-haps (the reference aHOR-hap panel) and often correspond to evolutionarily related centromere lineages with distinct structural features, such as differences in HOR organization, array size, or large structural variants.
+
+Centromere haplogroups are assigned separately for each chromosome, describing variation at each individual centromere.
+
+<div align="center">
+  <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/categorization_overview.png" alt="Rare k-mer based classification of centromere haplotypes" width="750">
+</div>
+
+For more background, see [Centromere haplogroups](docs/centromere_haplogroups.md).
+
+## What ascairn does
+
+ascairn infers aHOR-HGs from short-read whole-genome sequencing data. It extracts reads aligned to centromeric alpha satellite regions, generates a predefined rare k-mer count profile, and uses a probabilistic model to identify the most likely aHOR-HG pair for each chromosome. It also reports the closest proxy aHOR-hap pair from the reference aHOR-hap panel.
+
+The reference aHOR-hap panel was constructed in advance by extracting centromeric sequences from publicly available long-read assemblies (HPRC, HGSVC, T2T Consortium) and is distributed through the [ascairn_resource repository](https://github.com/friend1ws/ascairn_resource).
+
+The main outputs are:
+
+- the best-matching aHOR-HG (cluster) pair,
+- the nearest proxy aHOR-hap pair,
+- marker-level probability tables supporting the assignment.
+
+ascairn does not assemble centromeres de novo. Its results depend on sequencing depth, read alignment quality, and the representation of related aHOR-haps in the supplied reference panel.
+
+For more on the applications of ascairn, see [Applications](docs/applications.md).
+
+<div align="center">
+  <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/ascairn_workflow.png" alt="Overview of the ascairn framework" width="600">
+  <p><em>Overview of the ascairn workflow. Short-read WGS data are processed to count rare k-mers in centromeric regions; a probabilistic model is then used to infer the most likely aHOR-HG pair and the nearest proxy aHOR-hap pair from the reference panel.</em></p>
 </div>
 
 ## Prerequisites
@@ -81,17 +121,24 @@ ascairn_resource/
 
 ### 1. Prepare the sequence data
 
-Download sequence data (aligned to the GRCh38 reference genome) using one of the following methods:
+We use NA12877 from the 1000 Genomes Project, whose GRCh38-aligned CRAM is publicly available on AWS S3 and FTP.
 
-**Option 1: AWS S3 (recommended for faster downloads)**
+**Option 1: Direct S3 path (no download required)**
+
+If samtools is properly installed with S3 support, ascairn can read CRAM files directly from S3 without downloading. The file is:
 ```
-aws s3 cp s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/ERR3989340/NA12877.final.cram seq_data/
-aws s3 cp s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/ERR3989340/NA12877.final.cram.crai seq_data/
+s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/ERR3989340/NA12877.final.cram
 ```
 
-> If you have direct access to AWS S3 BAM or CRAM files and SAMtools is properly installed, you can skip downloading the files locally. Instead, directly specify the S3 path in subsequent steps.
+**Option 2: Download locally**
 
-**Option 2: FTP**
+Either via AWS CLI (public access, no AWS credentials required):
+```
+aws s3 cp --no-sign-request s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/ERR3989340/NA12877.final.cram seq_data/
+aws s3 cp --no-sign-request s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/ERR3989340/NA12877.final.cram.crai seq_data/
+```
+
+Or via FTP:
 ```
 wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram -P seq_data/
 wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram.crai -P seq_data/
@@ -99,8 +146,19 @@ wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram.crai 
 
 ### 2. Run the workflow
 
-The simplest way to run ascairn is via `type_all`, which executes all steps (`check_depth`, `kmer_count`, `cen_type`) for chr1-22 and chrX in a single command:
+The simplest way to run ascairn is via `type_all`, which executes all steps (`check_depth`, `kmer_count`, `cen_type`) for chr1-22, chrX, and chrY (males only) in a single command.
 
+**Using Option 1 (direct S3 path):**
+```bash
+ascairn type_all \
+    s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/ERR3989340/NA12877.final.cram \
+    -o output/NA12877 \
+    --resource_dir ascairn_resource/resource/panel/ascairn_paper_2025 \
+    --reference hg38 \
+    -t 8
+```
+
+**Using Option 2 (downloaded CRAM):**
 ```bash
 ascairn type_all \
     seq_data/NA12877.final.cram \
@@ -110,19 +168,47 @@ ascairn type_all \
     -t 8
 ```
 
-Alternatively, you can use the shell wrapper script `ascairn_type_allchr.sh`:
-```bash
-bash ascairn_type_allchr.sh seq_data/NA12877.final.cram output/NA12877 ascairn_resource/resource/panel/ascairn_paper_2025 hg38 8
-```
-
 ### 3. Check the results
 
 After successful execution, the main output file is:
 ```
-output/NA12877.cen_type.result.txt
+output/NA12877.cen_type_all.txt
 ```
 
 See [Output Format](#output-format) for how to interpret the results.
+
+### Running with CHM13-aligned data
+
+For users with CHM13-aligned data, here is an equivalent example using NA12878, whose CHM13-aligned CRAM is publicly available at the DDBJ mirror.
+
+**Option 1: Direct HTTPS URL (no download required)**
+
+If samtools is properly installed with libcurl support, ascairn can read CRAM files directly from HTTPS URLs:
+
+```bash
+ascairn type_all \
+    https://ddbj.nig.ac.jp/public/public-human-genomes/CHM13/1000Genomes/CRAM/NA12878/NA12878.cram \
+    -o output/NA12878 \
+    --resource_dir ascairn_resource/resource/panel/ascairn_paper_2025 \
+    --reference chm13 \
+    -t 8
+```
+
+**Option 2: Download locally**
+
+```
+wget https://ddbj.nig.ac.jp/public/public-human-genomes/CHM13/1000Genomes/CRAM/NA12878/NA12878.cram -P seq_data/
+wget https://ddbj.nig.ac.jp/public/public-human-genomes/CHM13/1000Genomes/CRAM/NA12878/NA12878.cram.crai -P seq_data/
+
+ascairn type_all \
+    seq_data/NA12878.cram \
+    -o output/NA12878 \
+    --resource_dir ascairn_resource/resource/panel/ascairn_paper_2025 \
+    --reference chm13 \
+    -t 8
+```
+
+The only differences from the GRCh38 workflow are (i) the input CRAM aligned to CHM13 and (ii) `--reference chm13` in the command.
 
 ## Commands
 
@@ -183,7 +269,7 @@ ascairn kmer_count \
     seq_data/NA12877.final.cram \
     -o output/NA12877.kmer_count.txt \
     --kmer_file ascairn_resource/resource/panel/ascairn_paper_2025/rare_kmer_list.fa \
-    --cen_region ascairn_resource/resource/common/cen_region_hg38.bed \
+    --cen_region ascairn_resource/resource/common/cen_region_curated_margin_hg38.bed \
     -t 8
 ```
 
@@ -208,7 +294,7 @@ For male samples on chrX, add the `--single_hap` option (`type_all` handles this
 
 | File | Description |
 |------|-------------|
-| `*.result.txt` | Best cluster pair, haplotype pair, and hap_info annotations (e.g., Contig_len) |
+| `*.cen_type.txt` | Best cluster pair, haplotype pair, and hap_info annotations (e.g., Contig_len) |
 | `*.cluster.hap_pair.txt` | Ranked cluster pairs with log-likelihoods. The first data row is the best pair. |
 | `*.haplotype.hap_pair.txt` | Ranked haplotype pairs with log-likelihoods. The first data row is the best pair. |
 | `*.cluster.marker_prob.txt` | Per-marker copy number probabilities used for cluster assignment |
@@ -216,13 +302,13 @@ For male samples on chrX, add the `--single_hap` option (`type_all` handles this
 
 ## Output Format
 
-### `cen_type.result.txt`
+### `cen_type_all.txt`
 
-The main result file (generated by `type_all` or `ascairn_type_allchr.sh`) is a TSV with one row per chromosome:
+The main result file (generated by `type_all`) is a TSV with one row per chromosome:
 
 | Column | Description |
 |--------|-------------|
-| Chr | Chromosome (chr1-chr22, chrX) |
+| Chr | Chromosome (chr1-chr22, chrX, chrY) |
 | Cluster_1 | Best-matching cluster ID for the first allele |
 | Cluster_2 | Best-matching cluster ID for the second allele |
 | Haplotype_1 | Nearest haplotype ID for the first allele (e.g., `HG00268.mat`) |
@@ -231,9 +317,9 @@ The main result file (generated by `type_all` or `ascairn_type_allchr.sh`) is a 
 
 For male chrX, `_2` columns are `NA`.
 
-### Per-chromosome `result.txt`
+### Per-chromosome `cen_type.txt`
 
-Each `cen_type` run produces a `*.result.txt` file with the same columns as above (without the `Chr` column). The `cen_type.result.txt` file is the concatenation of these per-chromosome files.
+Each `cen_type` run produces a `*.cen_type.txt` file with the same columns as above (without the `Chr` column). The `cen_type_all.txt` file is the concatenation of these per-chromosome files.
 
 ### Cluster and haplotype pair files
 
@@ -245,10 +331,29 @@ These files list all candidate pairs ranked by log-likelihood (higher = better f
 | Cluster2 / Haplotype2 | Second member of the pair |
 | Loglikelihood | Log-likelihood of the pair given the observed k-mer counts |
 
+## Performance
+
+We evaluated ascairn using leave-one-individual-out cross-validation on the reference panel: for each individual, both parental aHOR-haps were removed from the panel, and the resulting model was used to infer the haplogroup pair from the individual's short-read WGS data. To assess robustness to sequencing depth, each sample was downsampled to 1–30x coverage.
+
+The figures below show haplogroup pair assignment accuracy for each chromosome at various downsampled coverages, for short-read WGS data aligned to GRCh38 (upper) and CHM13 v2.0 (lower):
+
+**GRCh38-aligned data:**
+
+<div align="center">
+  <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/cluster_match_m3.heatmap.labeled.png" alt="Accuracy on GRCh38-aligned data" width="750">
+</div>
+
+**CHM13-aligned data:**
+
+<div align="center">
+  <img src="https://raw.githubusercontent.com/friend1ws/ascairn/main/image/cluster_match_chm13_m3.heatmap.labeled.png" alt="Accuracy on CHM13-aligned data" width="750">
+</div>
+
+Accuracy is generally high (>90%) for most chromosomes at coverage ≥ 5x, with comparable performance between GRCh38- and CHM13-aligned data. See [Shiraishi et al., bioRxiv, 2025](https://doi.org/10.1101/2025.07.26.666712) for details.
+
 ## Notes
 
-- **CHM13 support**: ascairn supports both GRCh38 (hg38) and T2T-CHM13 (chm13) aligned BAM/CRAM files. Specify the reference genome via `--reference hg38` or `--reference chm13`. The centromere region BED files for each reference are provided in `resource/common/`.
-- **chrY**: chrY is currently excluded from the analysis. The centromeric region of chrY is largely composed of satellite III sequences rather than alpha satellite, making the rare k-mer approach less applicable.
+- **chrY**: chrY is processed only for male samples (determined automatically by `check_depth` from the chrX coverage ratio).
 - **Test data**: The Quick Start example uses NA12877 from the 1000 Genomes Project high-coverage dataset. This sample was chosen because it is publicly accessible via both AWS S3 and FTP, enabling reproducible testing without restricted data access.
 
 ## Citation
