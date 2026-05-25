@@ -5,6 +5,7 @@
 
 # ascairn
 
+[![PyPI version](https://img.shields.io/pypi/v/ascairn.svg)](https://pypi.org/project/ascairn/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 ![CI](https://github.com/friend1ws/ascairn/actions/workflows/python-test.yml/badge.svg)
 
@@ -74,11 +75,21 @@ For more on the applications of ascairn, see [Applications](docs/applications.md
 
 1. Install prerequisite software and ensure they are accessible via your `PATH`.
 
-2. Install `ascairn`.
+2. Install `ascairn` from PyPI.
+```bash
+pip install ascairn
+```
+
+To enable access to CRAM files on Amazon S3, install with the `s3` extra:
+```bash
+pip install ascairn[s3]
+```
+
+Or, to install from source (for development):
 ```bash
 git clone https://github.com/friend1ws/ascairn.git
 cd ascairn
-pip install .   # or pip install -e . for development
+pip install -e .
 ```
 
 3. Download [ascairn resource files](https://github.com/friend1ws/ascairn_resource).
