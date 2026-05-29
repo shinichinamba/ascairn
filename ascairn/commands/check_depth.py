@@ -10,28 +10,30 @@ logger = get_logger(__name__)
 @click.option("-o", "--output_file", required=True, type=click.Path())
 @click.option("--baseline_region", "baseline_region_file", required=True, type=click.Path(exists=True))
 @click.option("--x_region", "x_region_file", type=click.Path(exists=True), default=None)
+@click.option("-r", "--reference_fasta", type=click.Path(exists=True), default=None,
+              help="Reference fasta for CRAM input (passed to samtools/mosdepth).")
 @click.option("-t", "--threads", default=4, help="Number of threads to use.")
-def check_depth_command(bam_file, output_file, baseline_region_file, x_region_file, threads):
+def check_depth_command(bam_file, output_file, baseline_region_file, x_region_file, reference_fasta, threads):
 
     # check if the executables exist
     is_tool("samtools")
     is_tool("mosdepth")
 
     # check input file existences
-    is_exists_bam(bam_file)
+    is_exists_bam(bam_file, reference=reference_fasta)
 
     # make directory for the output prefix
     output_dir = os.path.dirname(output_file)
     if output_dir != '' and not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    logger.info("Checking the sequence coverage in the baseline region") 
-    depth = check_depth(bam_file, output_file + ".tmp.coverage.txt", baseline_region_file, num_threads = threads)
-    os.remove(output_file + ".tmp.coverage.txt") 
-    
+    logger.info("Checking the sequence coverage in the baseline region")
+    depth = check_depth(bam_file, output_file + ".tmp.coverage.txt", baseline_region_file, num_threads = threads, reference = reference_fasta)
+    os.remove(output_file + ".tmp.coverage.txt")
+
     if x_region_file is not None:
         logger.info("Checking the sequence coverage in the short arm of chromosome X short-arm region for sex determination")
-        depth_chrX = check_depth(bam_file, output_file + ".tmp.chrX_coverage.txt", x_region_file, num_threads = threads)
+        depth_chrX = check_depth(bam_file, output_file + ".tmp.chrX_coverage.txt", x_region_file, num_threads = threads, reference = reference_fasta)
         os.remove(output_file + ".tmp.chrX_coverage.txt")
     
         logger.info("The depth ratio: %s" % str(depth_chrX / depth))

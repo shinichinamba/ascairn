@@ -22,10 +22,12 @@ def read_sex_from_depth_file(depth_file):
               help="Path to panel resource directory (e.g. ascairn_resource/resource/panel/ascairn_paper_2025).")
 @click.option("--reference", required=True, type=click.Choice(["hg38", "chm13"]),
               help="Reference genome build for the BAM file.")
+@click.option("-r", "--reference_fasta", type=click.Path(exists=True), default=None,
+              help="Reference fasta for CRAM input (passed to samtools/mosdepth).")
 @click.option("-t", "--threads", default=8, help="Number of threads to use.")
 @click.option("--debug", is_flag=True, default=False,
               help="Keep per-chromosome intermediate files (cen_type.txt, cluster/haplotype tables).")
-def type_all_command(bam_file, output_prefix, resource_dir, reference, threads, debug):
+def type_all_command(bam_file, output_prefix, resource_dir, reference, reference_fasta, threads, debug):
     """Run the full ascairn workflow (check_depth, kmer_count, cen_type for all chromosomes)."""
 
     os.environ["POLARS_MAX_THREADS"] = str(threads)
@@ -40,6 +42,8 @@ def type_all_command(bam_file, output_prefix, resource_dir, reference, threads, 
     depth_file = f"{output_prefix}.depth.txt"
     kmer_count_file = f"{output_prefix}.kmer_count.txt"
 
+    ref_fa_args = ["-r", reference_fasta] if reference_fasta is not None else []
+
     # Step 1: check_depth
     logger.info("Step 1: Checking sequence depth")
     subprocess.run([
@@ -49,7 +53,7 @@ def type_all_command(bam_file, output_prefix, resource_dir, reference, threads, 
         "--baseline_region", os.path.join(common_dir, f"chr22_long_arm_{reference}.bed"),
         "--x_region", os.path.join(common_dir, f"chrX_short_arm_{reference}.bed"),
         "-t", str(threads),
-    ], check=True)
+    ] + ref_fa_args, check=True)
 
     # Step 2: kmer_count
     logger.info("Step 2: Counting rare k-mers")
@@ -60,7 +64,7 @@ def type_all_command(bam_file, output_prefix, resource_dir, reference, threads, 
         "--kmer_file", os.path.join(resource_dir, "rare_kmer_list.fa"),
         "--cen_region", os.path.join(common_dir, f"cen_region_curated_margin_{reference}.bed"),
         "-t", str(threads),
-    ], check=True)
+    ] + ref_fa_args, check=True)
 
     # Read sex from depth file
     sex = read_sex_from_depth_file(depth_file)

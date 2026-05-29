@@ -179,6 +179,20 @@ ascairn type_all \
     -t 8
 ```
 
+**CRAM with a local reference fasta:**
+
+If the CRAM header's UR/MD5 cannot be resolved (network-isolated nodes, locally produced CRAMs, etc.), pass the reference fasta with `-r/--reference_fasta`. This is forwarded to samtools/mosdepth and works for `check_depth`, `kmer_count`, and `type_all`:
+
+```bash
+ascairn type_all \
+    seq_data/NA12877.final.cram \
+    -o output/NA12877 \
+    --resource_dir ascairn_resource/resource/panel/ascairn_paper_2025 \
+    --reference hg38 \
+    -r /path/to/GRCh38.fasta \
+    -t 8
+```
+
 ### 3. Check the results
 
 After successful execution, the main output file is:

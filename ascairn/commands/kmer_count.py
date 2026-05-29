@@ -10,8 +10,10 @@ logger = get_logger(__name__)
 @click.option("-o", "--output_file", required=True, type=click.Path())
 @click.option("--kmer_file", required=True, type=click.Path(exists=True))
 @click.option("--cen_region", "cen_region_file", required=True, type=click.Path(exists=True))
+@click.option("-r", "--reference_fasta", type=click.Path(exists=True), default=None,
+              help="Reference fasta for CRAM input (passed to samtools).")
 @click.option("-t", "--threads", default=4, help="Number of threads to use.")
-def kmer_count_command(bam_file, output_file, kmer_file, cen_region_file, threads):
+def kmer_count_command(bam_file, output_file, kmer_file, cen_region_file, reference_fasta, threads):
 
 
     # check if the executables exist
@@ -19,7 +21,7 @@ def kmer_count_command(bam_file, output_file, kmer_file, cen_region_file, thread
     is_tool("jellyfish")
 
     # check input file existences
-    is_exists_bam(bam_file)
+    is_exists_bam(bam_file, reference=reference_fasta)
 
     # make directory for the output prefix
     output_dir = os.path.dirname(output_file)
@@ -38,7 +40,7 @@ def kmer_count_command(bam_file, output_file, kmer_file, cen_region_file, thread
 
     kmer_size = check_kmer_size_from_kmer_fasta(kmer_file_fasta)
 
-    count_rare_kmer(bam_file, output_file, cen_region_file, kmer_file_fasta, kmer_size, threads)
+    count_rare_kmer(bam_file, output_file, cen_region_file, kmer_file_fasta, kmer_size, threads, reference=reference_fasta)
 
     if is_make_kmer_file_fasta:
         os.remove(output_file + ".tmp.kmer_list.fa")
