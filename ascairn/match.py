@@ -211,11 +211,15 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
     PR1_max = None
     PR2_max = None
 
+    # Cache the per-cluster filter so each is built once, not |C|^2 times
+    cluster_pr = {c: cluster_marker_count_df_2.filter(pl.col("Cluster") == c)
+                  for c in range(1, cluster_num + 1)}
+
     for i in range(1, cluster_num + 1):
         for j in range(i, cluster_num + 1):
 
-            PR1 = cluster_marker_count_df_2.filter(pl.col("Cluster") == i)
-            PR2 = cluster_marker_count_df_2.filter(pl.col("Cluster") == j)
+            PR1 = cluster_pr[i]
+            PR2 = cluster_pr[j]
 
             tL = calc_loglikelihood(PR1, PR2, D_count, marker_list)
             cl1_list.append(i)
@@ -320,36 +324,30 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
     PR2_max = None
 
 
+    # PR1 depends only on h1, PR2 only on h2: build each once and cache, rather
+    # than rebuilding |H1|*|H2| times inside the loop (PR build was ~76% of the
+    # per-pair cost in profiling).
+    def build_PR(hap, PR_c):
+        if hap not in [None, "NA", "None", "NONE"]:
+            return hap_marker_count_df_2 \
+                .filter(pl.col("Haplotype") == hap) \
+                .select(["Marker"] + [pl.col(f"prob_{k}").alias(f"prob_{k}_h") for k in range(max_copy_number + 1)]) \
+                .join(PR_c, on="Marker", how="inner") \
+                .with_columns([((1 - cluster_ratio) * pl.col(f"prob_{k}_h") + cluster_ratio * pl.col(f"prob_{k}_c")).alias(f"prob_{k}")
+                               for k in range(max_copy_number + 1)])
+        else:
+            return PR_c \
+                .select(["Marker"] + [pl.col(f"prob_{k}_c").alias(f"prob_{k}") for k in range(max_copy_number + 1)])
+
+    pr1_cache = {h: build_PR(h, PR1_c) for h in set(target_cluster_hap_1)}
+    pr2_cache = {h: build_PR(h, PR2_c) for h in set(target_cluster_hap_2)}
+
     for i in range(len(target_cluster_hap_1)):
         for j in range(len(target_cluster_hap_2)):
 
-            if target_cluster_hap_1[i] not in [None, "NA", "None", "NONE"]:
+            PR1 = pr1_cache[target_cluster_hap_1[i]]
+            PR2 = pr2_cache[target_cluster_hap_2[j]]
 
-                PR1 = hap_marker_count_df_2 \
-                    .filter(pl.col("Haplotype") == target_cluster_hap_1[i]) \
-                    .select(["Marker"] + [pl.col(f"prob_{k}").alias(f"prob_{k}_h") for k in range(max_copy_number + 1)]) \
-                    .join(PR1_c, on="Marker", how="inner") \
-                    .with_columns([((1 - cluster_ratio) * pl.col(f"prob_{k}_h") + cluster_ratio * pl.col(f"prob_{k}_c")).alias(f"prob_{k}")
-                                   for k in range(max_copy_number + 1)])
-
-            else:
-                PR1 = PR1_c \
-                    .select(["Marker"] + [pl.col(f"prob_{k}_c").alias(f"prob_{k}") for k in range(max_copy_number + 1)])
-
-            if target_cluster_hap_2[j] not in [None, "NA", "None", "NONE"]:
-
-                PR2 = hap_marker_count_df_2 \
-                    .filter(pl.col("Haplotype") == target_cluster_hap_2[j]) \
-                    .select(["Marker"] + [pl.col(f"prob_{k}").alias(f"prob_{k}_h") for k in range(max_copy_number + 1)]) \
-                    .join(PR2_c, on="Marker", how="inner") \
-                    .with_columns([((1 - cluster_ratio) * pl.col(f"prob_{k}_h") + cluster_ratio * pl.col(f"prob_{k}_c")).alias(f"prob_{k}")
-                                   for k in range(max_copy_number + 1)])
-
-            else:
-                PR2 = PR2_c \
-                    .select(["Marker"] + [pl.col(f"prob_{k}_c").alias(f"prob_{k}") for k in range(max_copy_number + 1)])
-
-     
             tL = calc_loglikelihood(PR1, PR2, D_count, marker_list)
             cl1_list.append(target_cluster_hap_1[i])
             cl2_list.append(target_cluster_hap_2[j])
