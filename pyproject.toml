@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ascairn"
-version = "0.2.1b1"
+version = "0.2.1"
 description = "Analyze centromere variation from short-read data using rare k-mers in alpha satellite sequences"
 readme = "README.md"
 license = { text = "GPL-3.0-only" }
