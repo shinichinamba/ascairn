@@ -378,6 +378,7 @@ Accuracy is generally high (>90%) for most chromosomes at coverage ≥ 5x, with 
 
 ## Notes
 
+- **Haplotype-pair search**: For diploid chromosomes, the best haplotype pair is found using a beam search with multiple starting points by default, which is substantially faster than evaluating every pair. The result is identical to the full exhaustive search. To force the full search, pass `--exhaustive` to `cen_type` (this flag is available on `cen_type` only; `type_all` always uses the default beam search).
 - **chrY**: chrY is processed only for male samples (determined automatically by `check_depth` from the chrX coverage ratio).
 - **Test data**: The Quick Start example uses NA12877 from the 1000 Genomes Project high-coverage dataset. This sample was chosen because it is publicly accessible via both AWS S3 and FTP, enabling reproducible testing without restricted data access.
 
