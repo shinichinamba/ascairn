@@ -5,6 +5,7 @@ from ascairn.commands import kmer_count
 from ascairn.commands import cen_type
 from ascairn.commands import check_depth
 from ascairn.commands import type_all
+from ascairn.commands import somatic_cna
 
 @click.group()
 @click.version_option(version=version("ascairn"))
@@ -17,5 +18,6 @@ main.add_command(kmer_count.kmer_count_command, name="kmer_count")
 # main.add_command(parse_marker.parse_marker_command, name="parse_marker")
 main.add_command(cen_type.cen_type_command, name="cen_type")
 main.add_command(check_depth.check_depth_command, name="check_depth")
+main.add_command(somatic_cna.somatic_cna_command, name="somatic_cna")
 
 
