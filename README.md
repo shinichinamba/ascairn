@@ -325,6 +325,21 @@ For male samples on chrX, add the `--single_hap` option (`type_all` handles this
 | `*.cluster.marker_prob.txt` | Per-marker copy number probabilities used for cluster assignment |
 | `*.haplotype.marker_prob.txt` | Per-marker copy number probabilities used for haplotype assignment |
 
+### `somatic_cna`
+
+Builds a per-marker somatic CNA table for one centromere by pairing tumor and normal rare k-mer counts on the proxy haplotypes inferred from the normal sample. Each marker that the normal `cen_type` confidently assigned to one proxy haplotype is placed at its position on that haplotype (from the panel `kmer_info`), and its tumor/normal count ratio is reported.
+
+```bash
+ascairn somatic_cna \
+    --marker_prob normal.haplotype.marker_prob.txt \
+    --normal_count normal.kmer_count.txt \
+    --tumor_count tumor.kmer_count.txt \
+    --kmer_info chr{N}.kmer_info.txt.gz \
+    -o output.somatic_cna.txt
+```
+
+**Output**: a TSV with columns `Marker`, `Hap_pos` (position on the proxy haplotype), `Haplotype` (1 or 2), `Normal_count`, `Tumor_count`, and `Ratio` (`Tumor_count / Normal_count`, or `NA` when `Normal_count` is 0).
+
 ## Output Format
 
 ### `cen_type_all.txt`
