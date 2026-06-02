@@ -6,17 +6,21 @@ logger = get_logger(__name__)
 
 
 
-def is_exists_bam(input_file):
+def is_exists_bam(input_file, reference=None):
 
     logger.info("Checking accessibility of the input BAM file.")
+    cmd = ["samtools", "view", "-H", input_file]
+    if reference is not None:
+        cmd += ["--reference", reference]
     try:
-        subprocess.run(["samtools", "view", "-H", input_file], check = True, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL)
+        subprocess.run(cmd, check = True, stdout = subprocess.DEVNULL)
     except Exception as e:
         logger.error(
             "Failed to access the file '%s' using samtools. Please verify the following: "
-            "1) The path of the BAM file is correct, "
-            "2) The BAM file and its index (.bai) are accessible, and "
-            "3) Samtools is properly installed and configured." % input_file
+            "1) The path of the BAM/CRAM file is correct, "
+            "2) The BAM/CRAM file and its index are accessible, "
+            "3) For CRAM input, the reference fasta is reachable (use -r/--reference_fasta or set REF_PATH), and "
+            "4) Samtools is properly installed and configured." % input_file
         )
         sys.exit(1)
         
@@ -32,22 +36,27 @@ def is_tool(executable):
 
 
 
-def check_depth(bam_file, output_file, baseline_region_file, num_threads = 4):
+def check_depth(bam_file, output_file, baseline_region_file, num_threads = 4, reference = None):
 
-    # make directory for the output file 
+    # make directory for the output file
     tmp_dir = output_file + ".tmp_dir.check_depth"
     if not os.path.exists(tmp_dir):
         os.makedirs(tmp_dir)
- 
+
     baseline_bam = tmp_dir + "/baseline.bam"
     mosdepth_prefix = tmp_dir + "/baseline"
     mosdepth_summary = f'{mosdepth_prefix}.mosdepth.summary.txt'
 
-    subprocess.run(["samtools", "view", "-bh", bam_file, "-L", baseline_region_file, "-M", "-@", str(num_threads), "-o", baseline_bam], check=True)
-    
+    ref_args = ["--reference", reference] if reference is not None else []
+
+    subprocess.run(["samtools", "view", "-bh", bam_file, "-L", baseline_region_file, "-M", "-@", str(num_threads), "-o", baseline_bam] + ref_args, check=True)
+
     subprocess.run(["samtools", "index", baseline_bam], check=True)
-    
-    subprocess.run(["mosdepth", mosdepth_prefix, baseline_bam, "-b", baseline_region_file, "-t", str(num_threads)], check=True)
+
+    mosdepth_cmd = ["mosdepth", mosdepth_prefix, baseline_bam, "-b", baseline_region_file, "-t", str(num_threads)]
+    if reference is not None:
+        mosdepth_cmd += ["-f", reference]
+    subprocess.run(mosdepth_cmd, check=True)
 
     depth = None
     with open(mosdepth_summary, 'r') as hin:
@@ -67,7 +76,7 @@ def check_depth(bam_file, output_file, baseline_region_file, num_threads = 4):
 
 
 
-def count_rare_kmer(bam_file, output_file, cen_region_file, rare_kmer_file, kmer_size = 27, num_threads = 4):
+def count_rare_kmer(bam_file, output_file, cen_region_file, rare_kmer_file, kmer_size = 27, num_threads = 4, reference = None):
 
     output_dir = os.path.dirname(output_file)
     if output_dir != '' and not os.path.exists(output_dir):
@@ -78,8 +87,10 @@ def count_rare_kmer(bam_file, output_file, cen_region_file, rare_kmer_file, kmer
     tmp_kmer_jf = output_file + ".centromere.rare_kmer.jf"
     tmp_kmer_fa = output_file + ".centromere.rare_kmer.fa"
 
+    ref_args = ["--reference", reference] if reference is not None else []
+
     logger.info("Extracting reads aligned to the target centromere region from the BAM file.")
-    subprocess.run(["samtools", "view", "-bh", bam_file, "-L", cen_region_file, "-M", "-@", str(num_threads), "-o", tmp_bam], check=True)
+    subprocess.run(["samtools", "view", "-bh", bam_file, "-L", cen_region_file, "-M", "-@", str(num_threads), "-o", tmp_bam] + ref_args, check=True)
 
     logger.info("Generating a FASTA format file of extracted reads for Jellyfish execution.")
     with open(tmp_fasta, 'w') as hout:

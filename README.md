@@ -5,6 +5,7 @@
 
 # ascairn
 
+[![PyPI version](https://img.shields.io/pypi/v/ascairn.svg)](https://pypi.org/project/ascairn/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 ![CI](https://github.com/friend1ws/ascairn/actions/workflows/python-test.yml/badge.svg)
 
@@ -74,11 +75,21 @@ For more on the applications of ascairn, see [Applications](docs/applications.md
 
 1. Install prerequisite software and ensure they are accessible via your `PATH`.
 
-2. Install `ascairn`.
+2. Install `ascairn` from PyPI.
+```bash
+pip install ascairn
+```
+
+To enable access to CRAM files on Amazon S3, install with the `s3` extra:
+```bash
+pip install ascairn[s3]
+```
+
+Or, to install from source (for development):
 ```bash
 git clone https://github.com/friend1ws/ascairn.git
 cd ascairn
-pip install .   # or pip install -e . for development
+pip install -e .
 ```
 
 3. Download [ascairn resource files](https://github.com/friend1ws/ascairn_resource).
@@ -165,6 +176,20 @@ ascairn type_all \
     -o output/NA12877 \
     --resource_dir ascairn_resource/resource/panel/ascairn_paper_2025 \
     --reference hg38 \
+    -t 8
+```
+
+**CRAM with a local reference fasta:**
+
+If the CRAM header's UR/MD5 cannot be resolved (network-isolated nodes, locally produced CRAMs, etc.), pass the reference fasta with `-r/--reference_fasta`. This is forwarded to samtools/mosdepth and works for `check_depth`, `kmer_count`, and `type_all`:
+
+```bash
+ascairn type_all \
+    seq_data/NA12877.final.cram \
+    -o output/NA12877 \
+    --resource_dir ascairn_resource/resource/panel/ascairn_paper_2025 \
+    --reference hg38 \
+    -r /path/to/GRCh38.fasta \
     -t 8
 ```
 
@@ -353,6 +378,7 @@ Accuracy is generally high (>90%) for most chromosomes at coverage ≥ 5x, with 
 
 ## Notes
 
+- **Haplotype-pair search**: For diploid chromosomes, the best haplotype pair is found using a beam search with multiple starting points by default, which is substantially faster than evaluating every pair. The result is identical to the full exhaustive search. To force the full search, pass `--exhaustive` to `cen_type` (this flag is available on `cen_type` only; `type_all` always uses the default beam search).
 - **chrY**: chrY is processed only for male samples (determined automatically by `check_depth` from the chrX coverage ratio).
 - **Test data**: The Quick Start example uses NA12877 from the 1000 Genomes Project high-coverage dataset. This sample was chosen because it is publicly accessible via both AWS S3 and FTP, enabling reproducible testing without restricted data access.
 

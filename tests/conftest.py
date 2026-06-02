@@ -51,3 +51,26 @@ def expected_dir():
 @pytest.fixture
 def s3_cram():
     return "s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/ERR3989340/NA12877.final.cram"
+
+
+REFERENCE_FA_URL = (
+    "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/"
+    "GRCh38_reference_genome/GRCh38_full_analysis_set_plus_decoy_hla.fa"
+)
+
+
+@pytest.fixture(scope="session")
+def reference_fasta():
+    """1000G GRCh38 reference fasta, cached in tests/cache/.
+
+    First call downloads ~3 GB; subsequent calls reuse the cache.
+    """
+    cache = os.path.join(TESTS_DIR, "cache")
+    os.makedirs(cache, exist_ok=True)
+    fa = os.path.join(cache, "GRCh38_full_analysis_set_plus_decoy_hla.fa")
+
+    if not os.path.exists(fa):
+        subprocess.run(["wget", "-q", REFERENCE_FA_URL, "-O", fa], check=True)
+    if not os.path.exists(fa + ".fai"):
+        subprocess.run(["samtools", "faidx", fa], check=True)
+    return fa

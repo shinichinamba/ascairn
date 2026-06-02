@@ -27,6 +27,37 @@ def calc_loglikelihood(PR1, PR2, D_count, marker_list, max_copy_number=2):
     return(tL)
 
 
+def _beam_search_hap_pair(H1, H2, get_ll, K=3, n_iter=2, n_starts=3):
+    """Beam search over the H1 x H2 pair grid. get_ll(h1, h2) -> float must be
+    memoized by the caller so evaluations stay <= |H1|*|H2| (loss-less). Returns
+    the best (h1, h2) pair. Deterministic when H1/H2 have a fixed order."""
+
+    # LL ties are broken by the (h1, h2) name tuple so set iteration order can
+    # never make the result non-deterministic.
+    def ll_key(pair):
+        return (get_ll(*pair), pair)
+
+    starts = [(H1[0], H2[0]),
+              (H1[len(H1) // 2], H2[len(H2) // 2]),
+              (H1[-1], H2[-1])][:n_starts]
+    starts = list(dict.fromkeys(starts))  # tiny clusters may repeat a start
+
+    global_best = None
+    for start in starts:
+        beam = [start]
+        for _ in range(n_iter):
+            expanded = set()
+            for (h1, h2) in beam:
+                expanded.update((h1, h) for h in sorted(H2, key=lambda h: ll_key((h1, h)), reverse=True)[:K])
+                expanded.update((h, h2) for h in sorted(H1, key=lambda h: ll_key((h, h2)), reverse=True)[:K])
+            beam = sorted(expanded, key=ll_key, reverse=True)[:K]
+        best = max(beam, key=ll_key)
+        if global_best is None or ll_key(best) > ll_key(global_best):
+            global_best = best
+
+    return global_best
+
+
 def calc_loglikelihood_single(PR1, D_count, marker_list, max_copy_number=2):
 
     PR1 = PR1.filter(pl.col("Marker").is_in(marker_list))
@@ -166,7 +197,7 @@ def build_cluster_marker_count(kmer_info_file, hap_info_file):
 
 def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_info_file, depth,
     cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4,
-    hap_candidates_file = None):
+    hap_candidates_file = None, exhaustive = False, beam_K = 3, beam_starts = 3):
 
     cluster_marker_count_df, max_copy_number = build_cluster_marker_count(kmer_info_file, hap_info_file)
 
@@ -211,11 +242,15 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
     PR1_max = None
     PR2_max = None
 
+    # Cache the per-cluster filter so each is built once, not |C|^2 times
+    cluster_pr = {c: cluster_marker_count_df_2.filter(pl.col("Cluster") == c)
+                  for c in range(1, cluster_num + 1)}
+
     for i in range(1, cluster_num + 1):
         for j in range(i, cluster_num + 1):
 
-            PR1 = cluster_marker_count_df_2.filter(pl.col("Cluster") == i)
-            PR2 = cluster_marker_count_df_2.filter(pl.col("Cluster") == j)
+            PR1 = cluster_pr[i]
+            PR2 = cluster_pr[j]
 
             tL = calc_loglikelihood(PR1, PR2, D_count, marker_list)
             cl1_list.append(i)
@@ -315,59 +350,64 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
     cl2_list = []
     LL_list = []
 
-    LL_max = -float("Inf")
-    PR1_max = None
-    PR2_max = None
 
+    # PR1 depends only on h1, PR2 only on h2: build each once and cache, rather
+    # than rebuilding |H1|*|H2| times inside the loop (PR build was ~76% of the
+    # per-pair cost in profiling).
+    def build_PR(hap, PR_c):
+        if hap not in [None, "NA", "None", "NONE"]:
+            return hap_marker_count_df_2 \
+                .filter(pl.col("Haplotype") == hap) \
+                .select(["Marker"] + [pl.col(f"prob_{k}").alias(f"prob_{k}_h") for k in range(max_copy_number + 1)]) \
+                .join(PR_c, on="Marker", how="inner") \
+                .with_columns([((1 - cluster_ratio) * pl.col(f"prob_{k}_h") + cluster_ratio * pl.col(f"prob_{k}_c")).alias(f"prob_{k}")
+                               for k in range(max_copy_number + 1)])
+        else:
+            return PR_c \
+                .select(["Marker"] + [pl.col(f"prob_{k}_c").alias(f"prob_{k}") for k in range(max_copy_number + 1)])
 
-    for i in range(len(target_cluster_hap_1)):
-        for j in range(len(target_cluster_hap_2)):
+    pr1_cache = {h: build_PR(h, PR1_c) for h in set(target_cluster_hap_1)}
+    pr2_cache = {h: build_PR(h, PR2_c) for h in set(target_cluster_hap_2)}
 
-            if target_cluster_hap_1[i] not in [None, "NA", "None", "NONE"]:
+    # Memoize LL only; PR frames live in pr1_cache/pr2_cache, so the best pair's
+    # PRs are looked up after the fact rather than tracked inside the loop.
+    memo = {}
+    def get_ll(h1, h2):
+        if (h1, h2) not in memo:
+            memo[(h1, h2)] = calc_loglikelihood(pr1_cache[h1], pr2_cache[h2], D_count, marker_list)
+        return memo[(h1, h2)]
 
-                PR1 = hap_marker_count_df_2 \
-                    .filter(pl.col("Haplotype") == target_cluster_hap_1[i]) \
-                    .select(["Marker"] + [pl.col(f"prob_{k}").alias(f"prob_{k}_h") for k in range(max_copy_number + 1)]) \
-                    .join(PR1_c, on="Marker", how="inner") \
-                    .with_columns([((1 - cluster_ratio) * pl.col(f"prob_{k}_h") + cluster_ratio * pl.col(f"prob_{k}_c")).alias(f"prob_{k}")
-                                   for k in range(max_copy_number + 1)])
+    if exhaustive:
+        for h1 in target_cluster_hap_1:
+            for h2 in target_cluster_hap_2:
+                get_ll(h1, h2)
+    else:
+        _beam_search_hap_pair(target_cluster_hap_1, target_cluster_hap_2,
+                              get_ll, K=beam_K, n_iter=2, n_starts=beam_starts)
 
-            else:
-                PR1 = PR1_c \
-                    .select(["Marker"] + [pl.col(f"prob_{k}_c").alias(f"prob_{k}") for k in range(max_copy_number + 1)])
-
-            if target_cluster_hap_2[j] not in [None, "NA", "None", "NONE"]:
-
-                PR2 = hap_marker_count_df_2 \
-                    .filter(pl.col("Haplotype") == target_cluster_hap_2[j]) \
-                    .select(["Marker"] + [pl.col(f"prob_{k}").alias(f"prob_{k}_h") for k in range(max_copy_number + 1)]) \
-                    .join(PR2_c, on="Marker", how="inner") \
-                    .with_columns([((1 - cluster_ratio) * pl.col(f"prob_{k}_h") + cluster_ratio * pl.col(f"prob_{k}_c")).alias(f"prob_{k}")
-                                   for k in range(max_copy_number + 1)])
-
-            else:
-                PR2 = PR2_c \
-                    .select(["Marker"] + [pl.col(f"prob_{k}_c").alias(f"prob_{k}") for k in range(max_copy_number + 1)])
-
-     
-            tL = calc_loglikelihood(PR1, PR2, D_count, marker_list)
-            cl1_list.append(target_cluster_hap_1[i])
-            cl2_list.append(target_cluster_hap_2[j])
-            LL_list.append(tL)
-
-            if tL > LL_max:
-                PR1_max = PR1
-                PR2_max = PR2
-                LL_max = tL
+    for (h1, h2), tL in memo.items():
+        cl1_list.append(h1)
+        cl2_list.append(h2)
+        LL_list.append(tL)
 
 
     D_LL2 = pl.DataFrame({"Haplotype1": cl1_list, "Haplotype2": cl2_list, "Loglikelihood": LL_list}).sort("Loglikelihood", descending = True)
 
     D_LL2.write_csv(output_prefix + ".haplotype.hap_pair.txt", separator = '\t')
 
+    best_hap1 = D_LL2[0, "Haplotype1"]
+    best_hap2 = D_LL2[0, "Haplotype2"]
+    # On diagonal clusters (h1,h2) and (h2,h1) tie; the original full loop kept the
+    # (i,j)-smallest, so reproduce that order (H1 and H2 share one list/order here).
+    if target_cluster_1 == target_cluster_2:
+        if target_cluster_hap_1.index(best_hap2) < target_cluster_hap_1.index(best_hap1):
+            best_hap1, best_hap2 = best_hap2, best_hap1
+
+    PR1_max = pr1_cache[best_hap1]
+    PR2_max = pr2_cache[best_hap2]
 
     marker_hap_summary = pl.read_csv(kmer_info_file, separator = '\t', infer_schema_length = None) \
-        .filter(pl.col("Haplotype").is_in([D_LL2[0, "Haplotype1"], D_LL2[0, "Haplotype2"]])) \
+        .filter(pl.col("Haplotype").is_in([best_hap1, best_hap2])) \
         .group_by(["Marker", "Haplotype"]) \
         .agg([
             pl.col("Marker_pos").mean().alias("Mean_marker_pos"),
@@ -375,12 +415,12 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
         ])
 
     hap_info1 = (
-        marker_hap_summary.filter(pl.col("Haplotype") == D_LL2[0, "Haplotype1"])
+        marker_hap_summary.filter(pl.col("Haplotype") == best_hap1)
         .rename({"Haplotype": "Haplotype1", "Mean_marker_pos": "Mean_marker_pos1", "Marker_count": "Marker_count1"})
     )
 
     hap_info2 = (
-        marker_hap_summary.filter(pl.col("Haplotype") == D_LL2[0, "Haplotype2"])
+        marker_hap_summary.filter(pl.col("Haplotype") == best_hap2)
         .rename({"Haplotype": "Haplotype2", "Mean_marker_pos": "Mean_marker_pos2", "Marker_count": "Marker_count2"})
     )
 
@@ -397,8 +437,6 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
     PR12_count.write_csv(output_prefix + ".haplotype.marker_prob.txt", separator = '\t')
 
     # Write cen_type.txt with hap_info annotations auto-expanded
-    best_hap1 = D_LL2[0, "Haplotype1"]
-    best_hap2 = D_LL2[0, "Haplotype2"]
     best_cl1 = D_LL[0, "Cluster1"]
     best_cl2 = D_LL[0, "Cluster2"]
 
