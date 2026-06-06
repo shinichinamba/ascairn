@@ -8,7 +8,8 @@ def test_somatic_cna(tmp_path):
     kmer_info = tmp_path / "chr1.kmer_info.txt.gz"
     normal_count = tmp_path / "normal.kmer_count.txt"
     tumor_count = tmp_path / "tumor.kmer_count.txt"
-    out = tmp_path / "out.txt"
+    out_prefix = tmp_path / "out"
+    out = tmp_path / "out.somatic_cna.txt"
 
     # cols: Marker H1 pos1 cnt1 H2 pos2 cnt2 Prob_00..Prob_22
     # mA -> hap1-specific, mB -> hap2-specific, mC -> ambiguous (dropped),
@@ -40,7 +41,7 @@ def test_somatic_cna(tmp_path):
          "--normal_count", str(normal_count),
          "--tumor_count", str(tumor_count),
          "--kmer_info", str(kmer_info),
-         "-o", str(out)],
+         "-o", str(out_prefix)],
         check=True,
     )
 
