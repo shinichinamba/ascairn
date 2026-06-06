@@ -335,10 +335,13 @@ ascairn somatic_cna \
     --normal_count normal.kmer_count.txt \
     --tumor_count tumor.kmer_count.txt \
     --kmer_info chr{N}.kmer_info.txt.gz \
-    -o output.somatic_cna.txt
+    --hap_info chr{N}.hap_info.txt \
+    -o output_prefix
 ```
 
-**Output**: a TSV with columns `Marker`, `Hap_pos` (position on the proxy haplotype), `Haplotype` (1 or 2), `Normal_count`, `Tumor_count`, and `Ratio` (`Tumor_count / Normal_count`, or `NA` when `Normal_count` is 0).
+**Output**: `<output_prefix>.somatic_cna.txt`, a TSV with columns `Marker`, `Hap_pos` (position on the proxy haplotype), `Haplotype` (1 or 2), `Normal_count`, `Tumor_count`, and `Ratio` (`Tumor_count / Normal_count`, or `NA` when `Normal_count` is 0). If matplotlib is installed (`pip install ascairn[plot]`), a per-bin ratio boxplot is also written to `<output_prefix>.somatic_cna.pdf`; `--hap_info` (optional) adds the aHOR-HG to the plot titles.
+
+See the [somatic CNA tutorial](docs/somatic_cna_tutorial.md) for a complete tumor/normal walkthrough on the HG008 cell line.
 
 ## Output Format
 
