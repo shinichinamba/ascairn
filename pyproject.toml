@@ -33,6 +33,7 @@ Repository = "https://github.com/friend1ws/ascairn"
 
 [project.optional-dependencies]
 s3 = ["boto3"]
+plot = ["matplotlib"]
 
 [project.scripts]
 ascairn = "ascairn.cli:main"
