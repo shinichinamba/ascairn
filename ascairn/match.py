@@ -5,7 +5,7 @@ from scipy.stats import nbinom
 import polars as pl
 
 
-def calc_loglikelihood(PR1, PR2, D_count, marker_list, max_copy_number=2):
+def calc_loglikelihood(PR1, PR2, D_count, marker_list, max_copy_number):
     # mprob_k = sum of prob_i * prob_j where i + j = k
     mprob_exprs = []
     for k in range(2 * max_copy_number + 1):
@@ -58,7 +58,7 @@ def _beam_search_hap_pair(H1, H2, get_ll, K=3, n_iter=2, n_starts=3):
     return global_best
 
 
-def calc_loglikelihood_single(PR1, D_count, marker_list, max_copy_number=2):
+def calc_loglikelihood_single(PR1, D_count, marker_list, max_copy_number):
 
     PR1 = PR1.filter(pl.col("Marker").is_in(marker_list))
 
@@ -72,7 +72,7 @@ def calc_loglikelihood_single(PR1, D_count, marker_list, max_copy_number=2):
     return(tL)
 
 
-def calc_posterior_prob(PR1, PR2, D_count, max_copy_number=2):
+def calc_posterior_prob(PR1, PR2, D_count, max_copy_number):
     # Generate (N+1)² mprob states: mprob_ij = prob_i * prob_j
     mprob_exprs = [(pl.col(f"prob_{i}") * pl.col(f"prob_{j}_PR2")).alias(f"mprob_{i}{j}")
                    for i in range(max_copy_number + 1) for j in range(max_copy_number + 1)]
@@ -99,7 +99,7 @@ def calc_posterior_prob(PR1, PR2, D_count, max_copy_number=2):
     return(PR12_count)
 
 
-def calc_posterior_prob_single(PR1, D_count, max_copy_number=2):
+def calc_posterior_prob_single(PR1, D_count, max_copy_number):
 
     tprob_exprs = [(pl.col(f"prob_{k}") * pl.col(f"dprob_{k}")).alias(f"tprob_{k}")
                    for k in range(max_copy_number + 1)]
@@ -274,7 +274,7 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
             PR1 = cluster_pr[i]
             PR2 = cluster_pr[j]
 
-            tL = calc_loglikelihood(PR1, PR2, D_count, marker_list)
+            tL = calc_loglikelihood(PR1, PR2, D_count, marker_list, max_copy_number)
             cl1_list.append(i)
             cl2_list.append(j)
             LL_list.append(tL)
@@ -396,7 +396,7 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
     memo = {}
     def get_ll(h1, h2):
         if (h1, h2) not in memo:
-            memo[(h1, h2)] = calc_loglikelihood(pr1_cache[h1], pr2_cache[h2], D_count, marker_list)
+            memo[(h1, h2)] = calc_loglikelihood(pr1_cache[h1], pr2_cache[h2], D_count, marker_list, max_copy_number)
         return memo[(h1, h2)]
 
     if exhaustive:
