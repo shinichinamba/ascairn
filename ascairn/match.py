@@ -129,6 +129,21 @@ def calc_rel_pos(kmer_info_file):
     return rel_pos_df
 
 
+def compute_marker_prior(cluster_marker_count_df, max_copy_number):
+    """Per-marker prior p_bar_i: the fraction of haplotypes (pooled across all
+    clusters) that carry the marker at copy number i. Used as the shrinkage
+    target for the empirical-Bayes estimate of the per-cluster copy-number
+    probabilities, so that a marker absent from a cluster (and rare overall)
+    is not assigned a spurious presence probability."""
+    agg = cluster_marker_count_df.group_by("Marker").agg(
+        [pl.col(f"Count_{i}").sum().alias(f"tot_{i}") for i in range(max_copy_number + 1)]
+    )
+    denom = sum([pl.col(f"tot_{i}") for i in range(max_copy_number + 1)])
+    return agg.with_columns(
+        [(pl.col(f"tot_{i}") / denom).alias(f"pbar_{i}") for i in range(max_copy_number + 1)]
+    ).select(["Marker"] + [f"pbar_{i}" for i in range(max_copy_number + 1)])
+
+
 def build_cluster_marker_count(kmer_info_file, hap_info_file):
     """Build cluster_marker_count DataFrame on-the-fly from kmer_info and hap_info."""
 
@@ -196,7 +211,7 @@ def build_cluster_marker_count(kmer_info_file, hap_info_file):
 
 
 def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_info_file, depth,
-    cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4,
+    cluster_ratio = 0.1, pseudo_count = 0.1, kappa = 1.0, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4,
     hap_candidates_file = None, exhaustive = False, beam_K = 3, beam_starts = 3):
 
     cluster_marker_count_df, max_copy_number = build_cluster_marker_count(kmer_info_file, hap_info_file)
@@ -228,11 +243,18 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
 
     cluster_num = cluster_marker_count_df["Cluster"].max()
 
+    # Empirical-Bayes shrinkage of per-cluster copy-number probabilities toward a
+    # per-marker prior, instead of a uniform pseudo count. This prevents markers
+    # absent from a cluster from receiving a spurious presence probability, which
+    # otherwise lets heterogeneous large clusters act as "magnets".
+    marker_prior_df = compute_marker_prior(cluster_marker_count_df, max_copy_number)
     count_cols = [pl.col(f"Count_{i}") for i in range(max_copy_number + 1)]
-    total = sum(count_cols) + (max_copy_number + 1) * pseudo_count
-    prob_exprs = [((pl.col(f"Count_{i}") + pseudo_count) / total).alias(f"prob_{i}")
+    n_c = sum(count_cols)  # cluster haplotype count (constant per marker)
+    prob_exprs = [((pl.col(f"Count_{i}") + kappa * pl.col(f"pbar_{i}")) / (n_c + kappa)).alias(f"prob_{i}")
                   for i in range(max_copy_number + 1)]
-    cluster_marker_count_df_2 = cluster_marker_count_df.with_columns(prob_exprs)
+    cluster_marker_count_df_2 = cluster_marker_count_df \
+        .join(marker_prior_df, on="Marker", how="left") \
+        .with_columns(prob_exprs)
 
     cl1_list = []
     cl2_list = []
@@ -454,7 +476,7 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
 
 
 def match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_file, hap_info_file, depth,
-    cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4,
+    cluster_ratio = 0.1, pseudo_count = 0.1, kappa = 1.0, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4,
     hap_candidates_file = None):
 
     cluster_marker_count_df, max_copy_number = build_cluster_marker_count(kmer_info_file, hap_info_file)
@@ -486,11 +508,18 @@ def match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_fil
 
     cluster_num = cluster_marker_count_df["Cluster"].max()
 
+    # Empirical-Bayes shrinkage of per-cluster copy-number probabilities toward a
+    # per-marker prior, instead of a uniform pseudo count. This prevents markers
+    # absent from a cluster from receiving a spurious presence probability, which
+    # otherwise lets heterogeneous large clusters act as "magnets".
+    marker_prior_df = compute_marker_prior(cluster_marker_count_df, max_copy_number)
     count_cols = [pl.col(f"Count_{i}") for i in range(max_copy_number + 1)]
-    total = sum(count_cols) + (max_copy_number + 1) * pseudo_count
-    prob_exprs = [((pl.col(f"Count_{i}") + pseudo_count) / total).alias(f"prob_{i}")
+    n_c = sum(count_cols)  # cluster haplotype count (constant per marker)
+    prob_exprs = [((pl.col(f"Count_{i}") + kappa * pl.col(f"pbar_{i}")) / (n_c + kappa)).alias(f"prob_{i}")
                   for i in range(max_copy_number + 1)]
-    cluster_marker_count_df_2 = cluster_marker_count_df.with_columns(prob_exprs)
+    cluster_marker_count_df_2 = cluster_marker_count_df \
+        .join(marker_prior_df, on="Marker", how="left") \
+        .with_columns(prob_exprs)
 
     cl1_list = []
     LL_list = []
