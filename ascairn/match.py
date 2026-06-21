@@ -211,7 +211,7 @@ def build_cluster_marker_count(kmer_info_file, hap_info_file):
 
 
 def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_info_file, depth,
-    cluster_ratio = 0.1, pseudo_count = 0.1, kappa = 1.0, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4,
+    cluster_ratio = 0.1, pseudo_count = 0.1, kappa = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4,
     hap_candidates_file = None, exhaustive = False, beam_K = 3, beam_starts = 3):
 
     cluster_marker_count_df, max_copy_number = build_cluster_marker_count(kmer_info_file, hap_info_file)
@@ -476,7 +476,7 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
 
 
 def match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_file, hap_info_file, depth,
-    cluster_ratio = 0.1, pseudo_count = 0.1, kappa = 1.0, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4,
+    cluster_ratio = 0.1, pseudo_count = 0.1, kappa = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4,
     hap_candidates_file = None):
 
     cluster_marker_count_df, max_copy_number = build_cluster_marker_count(kmer_info_file, hap_info_file)

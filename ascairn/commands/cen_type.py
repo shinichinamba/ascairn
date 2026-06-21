@@ -28,7 +28,7 @@ def read_depth_from_file(depth_file):
 @click.option("--beam_starts", default=3, hidden=True)
 @click.option("--cluster_ratio", default=0.1, hidden=True)
 @click.option("--pseudo_count", default=0.1, hidden=True)
-@click.option("--kappa", default=1.0, hidden=True,
+@click.option("--kappa", default=0.1, hidden=True,
               help="Empirical-Bayes shrinkage strength for cluster marker-copy probabilities.")
 @click.option("--nbinom_size_0", default=0.5, hidden=True)
 @click.option("--nbinom_size", default=8.0, hidden=True)
