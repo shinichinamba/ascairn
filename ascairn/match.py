@@ -5,7 +5,7 @@ from scipy.stats import nbinom
 import polars as pl
 
 
-def calc_loglikelihood(PR1, PR2, D_count, marker_list, max_copy_number=2):
+def calc_loglikelihood(PR1, PR2, D_count, marker_list, max_copy_number):
     # mprob_k = sum of prob_i * prob_j where i + j = k
     mprob_exprs = []
     for k in range(2 * max_copy_number + 1):
@@ -58,7 +58,7 @@ def _beam_search_hap_pair(H1, H2, get_ll, K=3, n_iter=2, n_starts=3):
     return global_best
 
 
-def calc_loglikelihood_single(PR1, D_count, marker_list, max_copy_number=2):
+def calc_loglikelihood_single(PR1, D_count, marker_list, max_copy_number):
 
     PR1 = PR1.filter(pl.col("Marker").is_in(marker_list))
 
@@ -72,7 +72,7 @@ def calc_loglikelihood_single(PR1, D_count, marker_list, max_copy_number=2):
     return(tL)
 
 
-def calc_posterior_prob(PR1, PR2, D_count, max_copy_number=2):
+def calc_posterior_prob(PR1, PR2, D_count, max_copy_number):
     # Generate (N+1)² mprob states: mprob_ij = prob_i * prob_j
     mprob_exprs = [(pl.col(f"prob_{i}") * pl.col(f"prob_{j}_PR2")).alias(f"mprob_{i}{j}")
                    for i in range(max_copy_number + 1) for j in range(max_copy_number + 1)]
@@ -99,7 +99,7 @@ def calc_posterior_prob(PR1, PR2, D_count, max_copy_number=2):
     return(PR12_count)
 
 
-def calc_posterior_prob_single(PR1, D_count, max_copy_number=2):
+def calc_posterior_prob_single(PR1, D_count, max_copy_number):
 
     tprob_exprs = [(pl.col(f"prob_{k}") * pl.col(f"dprob_{k}")).alias(f"tprob_{k}")
                    for k in range(max_copy_number + 1)]
@@ -127,6 +127,21 @@ def calc_rel_pos(kmer_info_file):
         pl.col("Rel_pos").std().alias("Rel_pos_std"),
     ])
     return rel_pos_df
+
+
+def compute_marker_prior(cluster_marker_count_df, max_copy_number):
+    """Per-marker prior p_bar_i: the fraction of haplotypes (pooled across all
+    clusters) that carry the marker at copy number i. Used as the shrinkage
+    target for the empirical-Bayes estimate of the per-cluster copy-number
+    probabilities, so that a marker absent from a cluster (and rare overall)
+    is not assigned a spurious presence probability."""
+    agg = cluster_marker_count_df.group_by("Marker").agg(
+        [pl.col(f"Count_{i}").sum().alias(f"tot_{i}") for i in range(max_copy_number + 1)]
+    )
+    denom = sum([pl.col(f"tot_{i}") for i in range(max_copy_number + 1)])
+    return agg.with_columns(
+        [(pl.col(f"tot_{i}") / denom).alias(f"pbar_{i}") for i in range(max_copy_number + 1)]
+    ).select(["Marker"] + [f"pbar_{i}" for i in range(max_copy_number + 1)])
 
 
 def build_cluster_marker_count(kmer_info_file, hap_info_file):
@@ -196,7 +211,7 @@ def build_cluster_marker_count(kmer_info_file, hap_info_file):
 
 
 def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_info_file, depth,
-    cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4,
+    cluster_ratio = 0.1, pseudo_count = 0.1, kappa = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4,
     hap_candidates_file = None, exhaustive = False, beam_K = 3, beam_starts = 3):
 
     cluster_marker_count_df, max_copy_number = build_cluster_marker_count(kmer_info_file, hap_info_file)
@@ -228,11 +243,18 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
 
     cluster_num = cluster_marker_count_df["Cluster"].max()
 
+    # Empirical-Bayes shrinkage of per-cluster copy-number probabilities toward a
+    # per-marker prior, instead of a uniform pseudo count. This prevents markers
+    # absent from a cluster from receiving a spurious presence probability, which
+    # otherwise lets heterogeneous large clusters act as "magnets".
+    marker_prior_df = compute_marker_prior(cluster_marker_count_df, max_copy_number)
     count_cols = [pl.col(f"Count_{i}") for i in range(max_copy_number + 1)]
-    total = sum(count_cols) + (max_copy_number + 1) * pseudo_count
-    prob_exprs = [((pl.col(f"Count_{i}") + pseudo_count) / total).alias(f"prob_{i}")
+    n_c = sum(count_cols)  # cluster haplotype count (constant per marker)
+    prob_exprs = [((pl.col(f"Count_{i}") + kappa * pl.col(f"pbar_{i}")) / (n_c + kappa)).alias(f"prob_{i}")
                   for i in range(max_copy_number + 1)]
-    cluster_marker_count_df_2 = cluster_marker_count_df.with_columns(prob_exprs)
+    cluster_marker_count_df_2 = cluster_marker_count_df \
+        .join(marker_prior_df, on="Marker", how="left") \
+        .with_columns(prob_exprs)
 
     cl1_list = []
     cl2_list = []
@@ -252,7 +274,7 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
             PR1 = cluster_pr[i]
             PR2 = cluster_pr[j]
 
-            tL = calc_loglikelihood(PR1, PR2, D_count, marker_list)
+            tL = calc_loglikelihood(PR1, PR2, D_count, marker_list, max_copy_number)
             cl1_list.append(i)
             cl2_list.append(j)
             LL_list.append(tL)
@@ -374,7 +396,7 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
     memo = {}
     def get_ll(h1, h2):
         if (h1, h2) not in memo:
-            memo[(h1, h2)] = calc_loglikelihood(pr1_cache[h1], pr2_cache[h2], D_count, marker_list)
+            memo[(h1, h2)] = calc_loglikelihood(pr1_cache[h1], pr2_cache[h2], D_count, marker_list, max_copy_number)
         return memo[(h1, h2)]
 
     if exhaustive:
@@ -454,7 +476,7 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, hap_
 
 
 def match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_file, hap_info_file, depth,
-    cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4,
+    cluster_ratio = 0.1, pseudo_count = 0.1, kappa = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0_unit = 0.8 / 30, nbinom_mu_unit = 0.4,
     hap_candidates_file = None):
 
     cluster_marker_count_df, max_copy_number = build_cluster_marker_count(kmer_info_file, hap_info_file)
@@ -486,11 +508,18 @@ def match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_fil
 
     cluster_num = cluster_marker_count_df["Cluster"].max()
 
+    # Empirical-Bayes shrinkage of per-cluster copy-number probabilities toward a
+    # per-marker prior, instead of a uniform pseudo count. This prevents markers
+    # absent from a cluster from receiving a spurious presence probability, which
+    # otherwise lets heterogeneous large clusters act as "magnets".
+    marker_prior_df = compute_marker_prior(cluster_marker_count_df, max_copy_number)
     count_cols = [pl.col(f"Count_{i}") for i in range(max_copy_number + 1)]
-    total = sum(count_cols) + (max_copy_number + 1) * pseudo_count
-    prob_exprs = [((pl.col(f"Count_{i}") + pseudo_count) / total).alias(f"prob_{i}")
+    n_c = sum(count_cols)  # cluster haplotype count (constant per marker)
+    prob_exprs = [((pl.col(f"Count_{i}") + kappa * pl.col(f"pbar_{i}")) / (n_c + kappa)).alias(f"prob_{i}")
                   for i in range(max_copy_number + 1)]
-    cluster_marker_count_df_2 = cluster_marker_count_df.with_columns(prob_exprs)
+    cluster_marker_count_df_2 = cluster_marker_count_df \
+        .join(marker_prior_df, on="Marker", how="left") \
+        .with_columns(prob_exprs)
 
     cl1_list = []
     LL_list = []
