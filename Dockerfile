@@ -35,9 +35,10 @@ RUN set -eux; \
         wget https://github.com/brentp/mosdepth/releases/download/v0.3.9/mosdepth && \
         chmod +x mosdepth && mv mosdepth /usr/local/bin/ ; \
     elif [ "$TARGETARCH" = "arm64" ]; then \
-        wget -qO- https://micro.mamba.run/api/micromamba/linux-aarch64/latest \
-            | tar -xj bin/micromamba && \
-        ./bin/micromamba create -y -p /opt/conda -c conda-forge -c bioconda \
+        wget -qO /usr/local/bin/micromamba \
+            https://github.com/mamba-org/micromamba-releases/releases/latest/download/micromamba-linux-aarch64 && \
+        chmod +x /usr/local/bin/micromamba && \
+        micromamba create -y -p /opt/conda -c conda-forge -c bioconda \
             "mosdepth>=0.3.10" && \
         ln -s /opt/conda/bin/mosdepth /usr/local/bin/mosdepth ; \
     else \
