@@ -29,9 +29,21 @@ RUN wget https://github.com/samtools/samtools/releases/download/1.21/samtools-1.
 
 RUN apt update && apt install -y jellyfish
 
-RUN wget https://github.com/brentp/mosdepth/releases/download/v0.3.9/mosdepth && \
-    chmod +x mosdepth && \
-    mv mosdepth /usr/local/bin/
+ARG TARGETARCH
+RUN set -eux; \
+    if [ "$TARGETARCH" = "amd64" ]; then \
+        wget https://github.com/brentp/mosdepth/releases/download/v0.3.9/mosdepth && \
+        chmod +x mosdepth && mv mosdepth /usr/local/bin/ ; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        wget -qO- https://micro.mamba.run/api/micromamba/linux-aarch64/latest \
+            | tar -xj bin/micromamba && \
+        ./bin/micromamba create -y -p /opt/conda -c conda-forge -c bioconda \
+            "mosdepth>=0.3.10" && \
+        ln -s /opt/conda/bin/mosdepth /usr/local/bin/mosdepth ; \
+    else \
+        echo "unsupported TARGETARCH: $TARGETARCH" >&2; exit 1; \
+    fi; \
+    mosdepth --version
 
 RUN python3 -m pip install --upgrade setuptools --break-system-packages
 # RUN python3 -m pip install boto3
